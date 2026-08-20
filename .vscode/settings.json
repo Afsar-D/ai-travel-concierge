@@ -1,0 +1,89 @@
+{
+    "workbench.activityBar.location": "top",
+    "workbench.sideBar.location": "right",
+    "workbench.statusBar.visible": false,
+    "workbench.startupEditor": "none",
+    "window.commandCenter": false,
+    "workbench.layoutControl.enabled": false,
+    "workbench.openInAgents.enabled": false,
+    "workbench.browser.showInTitleBar": false,
+    "workbench.iconTheme": "material-icon-theme",
+
+    /* Font Settings */
+    "editor.fontFamily": "'Cascadia Code', 'Fira Code', monospace",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 19,
+
+    /* Terminal Font Match */
+    "terminal.integrated.fontFamily": "'FiraCode Nerd Font', 'FiraCode Nerd Font Mono', 'Fira Code', monospace",
+
+    "editor.inlineSuggest.enabled": false,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": false
+    },
+    "editor.suggestOnTriggerCharacters": true,
+
+    /* Syntax Highlighting Customization */
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": [
+                    "comment",
+                    "entity.other.attribute-name",
+                    "variable.parameter",
+                    "variable.other.property",
+                    "storage.type.class",
+                    "punctuation.definition.comment"
+                ],
+                "settings": {
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": [
+                    "keyword",
+                    "entity.name.function",
+                    "support.function"
+                ],
+                "settings": {
+                    "fontStyle": "normal"
+                }
+            }
+        ]
+    },
+
+    "workbench.colorTheme": "Tokyo Night Dark",
+    "workbench.editor.showTabs": "single",
+    "editor.minimap.enabled": false,
+    "editor.folding": false,
+    "editor.glyphMargin": false,
+    "editor.renderWhitespace": "none",
+    "editor.renderLineHighlight": "none",
+    "editor.guides.indentation": false,
+    "editor.guides.bracketPairs": false,
+    "editor.codeLens": false,
+    "breadcrumbs.enabled": true,
+    "files.autoSave": "afterDelay",
+    "workbench.editor.enablePreview": false,
+    "livePreview.notifyOnOpenLooseFile": false,
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.tabs.defaultColor": "terminal.ansiWhite",
+    "workbench.editorAssociations": {
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "*.pyc": "default"
+    },
+    "chat.viewSessions.orientation": "stacked",
+    "jupyter.askForKernelRestart": false,
+    "discord.lowerDetailsEditing": "Workspace: top secret 🤫",
+    "discord.lowerDetailsDebugging": "Debugging: {top secret 🤫}",
+    "redhat.telemetry.enabled": true,
+    "window.menuBarVisibility": "toggle",
+    "workbench.preferredHighContrastColorTheme": "Night Wolf (black)",
+    "editor.wordWrap": "on",
+    "python.terminal.useEnvFile": true,
+    "window.titleBarStyle": "native"
+}
