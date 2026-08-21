@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
+from httpx import stream
 import streamlit as st
-from streamlit import user
-from streamlit.source_util import Icon
 from dotenv import load_dotenv
 from google import genai
 import os
@@ -21,6 +20,15 @@ with st.sidebar:
 api = os.getenv('GEMINI_API_KEY')
 client = genai.Client(api_key=api)
 
+def content_stream(content):
+    response = client.models.generate_content_stream(
+        model = 'gemini-3.5-flash-lite',
+        contents=content
+    )
+    for t in response:
+        yield t.text
+
+
 st.title("Travel Conicerge")
 # st.session_state
 with st.chat_message('ai'):
@@ -33,10 +41,9 @@ if user_input:= st.chat_input(placeholder='Type something here'):
         'role' : 'user',
         'content' : user_input
     })
-    response = client.models.generate_content(model='gemini-3.5-flash-lite',contents=user_input)
     st.session_state.messages.append({
         'role': 'ai',
-        'content' : f'{response.text}'
+        'content' : content_stream(user_input)
     })
 
 for key in st.session_state.messages:
