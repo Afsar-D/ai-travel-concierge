@@ -67,5 +67,3 @@ def get_weather_forecast(lat:float, lon:float, start_date:str, end_date:str, loc
             return summary
         except requests.exceptions.RequestException as e:
             return f'Error : {e}'
-    
-print(get_coords('kurnool'))

@@ -28,62 +28,64 @@ with st.sidebar:
     if duration < 0 : st.warning("End date should be later the start")
     else: st.write(f'{duration+1} day(s)')
     st.header("Budget")
-    st.select_slider('Budget', options=['Low', 'Medium', 'High'])
+    budget = st.select_slider('Budget', options=['Low', 'Medium', 'High'])
     button = st.button("Create Plan")
+    if not start and not end and not location:
+        st.warning("Fill all details")
 
 # Main Content
 ## API Integration
-api = os.getenv('GEMINI_API_KEY')
-client = genai.Client(api_key=api)
 configuration = types.GenerateContentConfig(
-    system_instruction=f"You are a multi travel companion who can provide best travel advice for any budget and place check weather conditions and suggest best places and hotels with in the budget range, use summary from cache data or session state",
+    system_instruction=f"You are a multi travel companion who can provide best travel advice for any budget and place check weather conditions and suggest best places and hotels with in the budget range location {location}, start date {start}, end date {end} and {budget} budget",
     temperature=0.7,
-    max_output_tokens=700,
-    response_mime_type='application/json',
+    max_output_tokens=2500,
     tools=[weather.get_coords , weather.get_weather_forecast]
 )
 
-def content_stream(content,config):
-    response = client.models.generate_content_stream(
-        model = 'gemini-3.5-flash-lite',
-        contents=content,
-        config=config
-    )
-    for t in response:
-        yield t.text
 
+api = os.getenv('GEMINI_API_KEY')
+client = genai.Client(api_key=api)
+chats = client.chats.create(model='gemini-3.5-flash-lite')
 
-st.title("Travel Conicerge")
-# st.session_state
+def content_stream(content, config):
+    response = client.models.generate_content_stream(model='gemini-3.5-flash-lite',
+                                                     contents=content,
+                                                     config=config)
+    for chunk in response:
+        if chunk.text:
+            yield chunk.text 
 
-with st.chat_message('ai'):
-    st.text('Hello user 👾, Im your Travel Companion. How can i Help you? ')
+content = f"A {duration} day(s) trip/travel to {location} from {start} to {end}\n"
+if button and location and location.lower() not in st.session_state:
+    st.session_state[location] = dict()
+    for chunk in content_stream(content=content, config = configuration):
+        content += chunk
+    st.session_state[location]['summary'] = content
+    st.write(content)
+chat_config = types.GenerateContentConfig(
+system_instruction=f"Use this summary as context for ongoing chat sesssion {content}",
+temperature=0.7,
+max_output_tokens=800,
+tools=[weather.get_coords , weather.get_weather_forecast]
+)
+
+with st.chat_message(name='ai'):
+    st.text('Hello user 👾, Im your Travel Companion. I have created a plan above if You have any doubts or make changes ask me... ')
+userInput = st.chat_input(placeholder='Type Your Message Here')
 if 'messages' not in st.session_state:
-    st.session_state.messages = []
-
-## Intial Plan Append
-if button and location and location not in st.session_state:
-    lat , lon, country = weather.get_coords(location)
-    summary = f'{duration} trip/travel to {location} from {start} to {end}\n'+ weather.get_weather_forecast(lat,lon,start,end,location)
-    st.session_state[location] = summary
-
-# Input
-if user_input:= st.chat_input(placeholder='Type something here'):
-    st.session_state.messages.append({
-        'role' : 'user',
-        'content' : user_input
+        st.session_state.messages = []
+if userInput :
+    st.session_state['messages'].append({
+        'role': 'user',
+        'content': userInput
     })
-    content = ""
-    for cont in content_stream(user_input, config=configuration):
-        content += cont
-    st.session_state.messages.append({
-        'role': 'ai',
-        'content' : content
+    
+    response = chats.send_message(userInput, config=chat_config)
+    st.session_state['messages'].append({
+        'role':'ai',
+        'content':response.text
     })
-
-for key in st.session_state.messages:
-    with st.chat_message(key['role']):
-        st.write(key['content'])
-
-# with col4:
-#     st.session_state
+for message in st.session_state['messages']:
+    with st.chat_message(name=message['role']):
+        st.write(message['content'])
+# st.session_state
