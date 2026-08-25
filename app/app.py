@@ -13,6 +13,8 @@ ROOT_DIR = current_dir.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 from tools import weather
+st.set_page_config(page_title="AI Travel Conicerge",
+                   layout='wide')
 # sidebar 
 with st.sidebar:
     st.header("Give Your Travel Details")
@@ -26,7 +28,7 @@ with st.sidebar:
     st.subheader("Duration")
     duration = (end-start).days
     if duration < 0 : st.warning("End date should be later the start")
-    else: st.write(f'{duration+1} day(s)')
+    else: st.write(f'{duration} day(s)')
     st.header("Budget")
     budget = st.select_slider('Budget', options=['Low', 'Medium', 'High'])
     button = st.button("Create Plan")
@@ -54,14 +56,16 @@ def content_stream(content, config):
     for chunk in response:
         if chunk.text:
             yield chunk.text 
-
-content = f"A {duration} day(s) trip/travel to {location} from {start} to {end}\n"
-if button and location and location.lower() not in st.session_state:
-    st.session_state[location] = dict()
-    for chunk in content_stream(content=content, config = configuration):
-        content += chunk
-    st.session_state[location]['summary'] = content
-    st.write(content)
+col1, col2 = st.columns([2,1],gap= 'large')
+content = f"A {duration} day(s) trip/travel to {location} from {start} to {end} with {budget} budget \n"
+with col2:
+    if button and location and location.lower() not in st.session_state:
+        st.session_state[location] = dict()
+        for chunk in content_stream(content=content, config = configuration):
+            content += chunk
+        st.session_state[location]['summary'] = content
+    if location and location in st.session_state:
+        st.write(st.session_state[location]['summary'])
 chat_config = types.GenerateContentConfig(
 system_instruction=f"Use this summary as context for ongoing chat sesssion {content}",
 temperature=0.7,
@@ -69,11 +73,13 @@ max_output_tokens=800,
 tools=[weather.get_coords , weather.get_weather_forecast]
 )
 
-with st.chat_message(name='ai'):
-    st.text('Hello user 👾, Im your Travel Companion. I have created a plan above if You have any doubts or make changes ask me... ')
 userInput = st.chat_input(placeholder='Type Your Message Here')
 if 'messages' not in st.session_state:
         st.session_state.messages = []
+        st.session_state.messages.append({
+            'role': 'ai',
+            'content' : 'Hello user 👾, Im your Travel Companion.If you have any query ask me... '
+        })
 if userInput :
     st.session_state['messages'].append({
         'role': 'user',
@@ -85,7 +91,8 @@ if userInput :
         'role':'ai',
         'content':response.text
     })
-for message in st.session_state['messages']:
-    with st.chat_message(name=message['role']):
-        st.write(message['content'])
+with col1:
+    for message in st.session_state['messages']:
+        with st.chat_message(name=message['role']):
+            st.write(message['content'])
 # st.session_state
