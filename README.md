@@ -36,14 +36,16 @@ Right now, the core backend integration and basic user interface are fully funct
 ```text
 ai-travel-agent/
 ├── app/
-│   └── app.py            # Streamlit UI & main application logic
+│   └── app.py              # Streamlit UI & main application logic
 ├── tools/
 │   ├── __init__.py
-│   └── weather.py        # Geocoding & weather API integrations
-├── .env                  # Private API keys (ignored by git)
-├── .env.example          # Template for required environment variables
-├── requirements.txt      # Project dependencies
-└── README.md             # This progress file
+│   └── flights_n_hotels.py # In Progress
+│   └── weather.py          # Geocoding & weather API integrations
+│   └── web_search.py       # Web search integration for recommendations(places, restaurants, etc)
+├── .env                    # Private API keys (ignored by git)
+├── .env.example            # Template for required environment variables
+├── requirements.txt        # Project dependencies
+└── README.md               # This progress file
 ```
 ---
 
