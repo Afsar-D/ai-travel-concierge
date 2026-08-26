@@ -45,6 +45,8 @@ ai-travel-agent/
 ├── requirements.txt      # Project dependencies
 └── README.md             # This progress file
 ```
+---
+
  ## ⚙️ Quick Start 
  Clone the repo and navigate to the project directory.
 
