@@ -34,6 +34,11 @@ WMO_CODES = {
 
 
 def get_coords(location:str)->str:
+    """Fetch Coordinates of location/city use this ONLY when needed to fetch coordinates of city/location
+    Args:
+        location(str): The name of destination ("Paris", "Goa")
+    Return:
+        Latitiude, longitude , country name"""
     geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1&language=en&format=json"
     data = requests.get(geo_url).json()
     lat = data['results'][0]['latitude']    
@@ -43,10 +48,17 @@ def get_coords(location:str)->str:
     
     
 def get_weather_forecast(lat:float, lon:float, start_date:str, end_date:str, location:str)->str:
-        """
-        Fetch weather forecast from between Certains dates and return weather summary
-        Check if weather is suitable for which places or sites or for the trip and provide details about it
-        """
+        """Fetches real-time weather forecasts, daily temperatures, and rain predictions for a city/location.
+        Use this tool ONLY when the user asks about weather, rain, temperature, 
+        what to wear, or when planning outdoor vs. indoor activities.
+        Args:
+            lat(float) : latitude of location.
+            lon(float) : longitude of location.
+            start and end dates (date):Dates
+            and location(str): Name of the city.
+            
+        Returns:
+            str: Multi-day weather forecast summary including temperatures (°C) and rain (mm)."""
         url ="https://api.open-meteo.com/v1/forecast"
         params = {
             'latitude' : lat,
