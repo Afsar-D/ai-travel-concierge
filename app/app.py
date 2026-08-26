@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 import os
+from tools import web_search
 import datetime
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ with st.sidebar:
     with col2:
         end = st.date_input("Choose end")
     st.subheader("Duration")
-    duration = (end-start).days
+    duration = (end-start).days+1
     if duration < 0 : st.warning("End date should be later the start")
     else: st.write(f'{duration} day(s)')
     st.header("Budget")
@@ -41,7 +42,7 @@ configuration = types.GenerateContentConfig(
     system_instruction=f"You are a multi travel companion who can provide best travel advice for any budget and place check weather conditions and suggest best places and hotels with in the budget range location {location}, start date {start}, end date {end} and {budget} budget",
     temperature=0.7,
     max_output_tokens=2500,
-    tools=[weather.get_coords , weather.get_weather_forecast]
+    tools=[weather.get_coords , weather.get_weather_forecast, web_search.tavily_search]
 )
 
 
@@ -70,7 +71,7 @@ chat_config = types.GenerateContentConfig(
 system_instruction=f"Use this summary as context for ongoing chat sesssion {content}",
 temperature=0.7,
 max_output_tokens=800,
-tools=[weather.get_coords , weather.get_weather_forecast]
+tools=[weather.get_coords , weather.get_weather_forecast , web_search.tavily_search]
 )
 
 userInput = st.chat_input(placeholder='Type Your Message Here')
