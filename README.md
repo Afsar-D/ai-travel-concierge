@@ -44,3 +44,25 @@ ai-travel-agent/
 ├── .env.example          # Template for required environment variables
 ├── requirements.txt      # Project dependencies
 └── README.md             # This progress file
+```
+ ## ⚙️ Quick Start 
+ Clone the repo and navigate to the project directory.
+
+**Set up a virtual environment:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+**Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+**Configure your API keys: Create a .env file in the root folder and add your key:**
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+TAVILY_API_KEY=you_tavily_api_key_here
+```
+**Run the application:**
+```bash
+python -m streamlit run app/app.py
+```
