@@ -1,10 +1,8 @@
 from dotenv import load_dotenv
 import streamlit as st
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 import os
-from tools import web_search
 import datetime
 import sys
 from pathlib import Path
@@ -14,12 +12,15 @@ ROOT_DIR = current_dir.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 from tools import weather
+from tools import web_search
+from tools import flights_n_hotels as fh
 st.set_page_config(page_title="AI Travel Conicerge",
                    layout='wide')
 # sidebar 
 with st.sidebar:
     st.header("Give Your Travel Details")
-    location = st.text_input(label="Location(s)",placeholder='Paris')
+    origin = st.text_input(label="Origin",placeholder='Kurnool...')
+    location = st.text_input(label="Location(s)",placeholder='Paris...')
     st.header("Days")
     col1, col2 = st.columns(2)
     with col1:
@@ -38,13 +39,24 @@ with st.sidebar:
 
 # Main Content
 ## API Integration
+instructions = f"""You are an expert AI Travel Concierge. Your goal is to provide the best travel advice for any budget and destination. You can check weather conditions, suggest hotels, recommend activities, and search for flights.
+
+Your rules of operation:
+
+Current Trip Context: Keep in mind the user's trip details:origin is {origin} destination is {location}, starting on {start}, ending on {end}, with a {budget} budget.
+Weather & Recommendations: Use your weather tools to check forecasts and suggest best places/hotels suited to the user's budget.
+Flight Booking Workflow: If the user asks about flights, do the following:
+Get the latitude and longitude coordinates of both the departure location and destination.
+Find the closest commercial airports (IATA codes) using their coordinates.
+Search for flights between those IATA codes on the specified travel date.
+Present a clean summary of flights, listing ticket options, layovers, and ground travel tips if the airports are far from the actual cities."""
 configuration = types.GenerateContentConfig(
-    system_instruction=f"You are a multi travel companion who can provide best travel advice for any budget and place check weather conditions and suggest best places and hotels with in the budget range location {location}, start date {start}, end date {end} and {budget} budget",
+    system_instruction=instructions,
     temperature=0.7,
     max_output_tokens=2500,
     tools=[weather.get_coords , weather.get_weather_forecast, web_search.tavily_search]
 )
-
+load_dotenv()
 
 api = os.getenv('GEMINI_API_KEY')
 client = genai.Client(api_key=api)
@@ -67,11 +79,19 @@ with col2:
         st.session_state[location]['summary'] = content
     if location and location in st.session_state:
         st.write(st.session_state[location]['summary'])
+chat_instructions = f"""Use this summary as context for ongoing chat sesssion {content}.
+Current Trip Context: Keep in mind the user's trip details: origin is {origin}, destination is {location}, starting on {start}, ending on {end}, with a {budget} budget.
+Do not search for flights automatically. First, present the summary, and ask the user if they would like flight recommendations for their trip. Only call the coordinates, nearby airports, and flight search tools if the user says yes or explicitly asks for flight details.
+Flight Booking Workflow: If the user asks about flights, do the following:
+Get the latitude and longitude coordinates of both the departure location and destination.
+Find the closest commercial airports (IATA codes) using their coordinates.
+Search for flights between those IATA codes on the specified travel date.
+Present a clean summary of flights, listing ticket options, layovers, and ground travel tips if the airports are far from the actual cities."""
 chat_config = types.GenerateContentConfig(
-system_instruction=f"Use this summary as context for ongoing chat sesssion {content}",
+system_instruction=chat_instructions,
 temperature=0.7,
 max_output_tokens=800,
-tools=[weather.get_coords , weather.get_weather_forecast , web_search.tavily_search]
+tools=[weather.get_coords , weather.get_weather_forecast , web_search.tavily_search, fh.flights_search, fh.haversine, fh.find_nearby_airports]
 )
 
 userInput = st.chat_input(placeholder='Type Your Message Here')
