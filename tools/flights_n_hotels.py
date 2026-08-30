@@ -17,7 +17,19 @@ load_dotenv()
 api = os.getenv("SERP_API_KEY")
 client = serpapi.Client(api_key=api)
 
-
+def hotels_search(query:str, check_in_date:str, check_out_date:str, country:str, adults:int=1,children:int=0)->str:
+    response = client.search({
+        'engine' : "google_hotels",
+        "q" : query,
+        'adults':adults,
+        'children':children,
+        'check_in_date':check_in_date,
+        'check_out_date':check_out_date,
+        'currency': 'INR' if country.lower()=="india" else "USD"
+    })
+    return response
+    
+    
 def flights_search(departure:str, destination:str, currency:str, start_date:str)->dict:
     """Search for live flight options between two airports using SerpApi's Google Flights engine.
 

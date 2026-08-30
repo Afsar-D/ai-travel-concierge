@@ -27,6 +27,8 @@ with st.sidebar:
         start = st.date_input("Choose Start")
     with col2:
         end = st.date_input("Choose end")
+    st.subheader("Member(s)...")
+    count = st.number_input("Count",min_value=1)
     st.subheader("Duration")
     duration = (end-start).days+1
     if duration < 0 : st.warning("End date should be later the start")
@@ -43,7 +45,7 @@ instructions = f"""You are an expert AI Travel Concierge. Your goal is to provid
 
 Your rules of operation:
 
-Current Trip Context: Keep in mind the user's trip details:origin is {origin} destination is {location}, starting on {start}, ending on {end}, with a {budget} budget.
+Current Trip Context: Keep in mind the user's trip details:origin is {origin} destination is {location}, starting on {start}, ending on {end}, with a {budget} budget of {count} person(s).
 Weather & Recommendations: Use your weather tools to check forecasts and suggest best places/hotels suited to the user's budget.
 Flight Booking Workflow: If the user asks about flights, do the following:
 Get the latitude and longitude coordinates of both the departure location and destination.
@@ -80,7 +82,7 @@ with col2:
     if location and location in st.session_state:
         st.write(st.session_state[location]['summary'])
 chat_instructions = f"""Use this summary as context for ongoing chat sesssion {content}.
-Current Trip Context: Keep in mind the user's trip details: origin is {origin}, destination is {location}, starting on {start}, ending on {end}, with a {budget} budget.
+Current Trip Context: Keep in mind the user's trip details: origin is {origin}, destination is {location}, starting on {start}, ending on {end}, with a {budget} budget for {count} person(s).
 Do not search for flights automatically. First, present the summary, and ask the user if they would like flight recommendations for their trip. Only call the coordinates, nearby airports, and flight search tools if the user says yes or explicitly asks for flight details.
 Flight Booking Workflow: If the user asks about flights, do the following:
 Get the latitude and longitude coordinates of both the departure location and destination.
