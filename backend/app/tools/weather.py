@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from typing import Any, Tuple
 import httpx
+import asyncio
 
 router = APIRouter(prefix="/tools/weather")
 
@@ -62,7 +63,8 @@ async def get_weather_forecast(start_date: str, end_date: str, location: str) ->
             "daily": "temperature_2m_min,temperature_2m_max,rain_sum,weather_code",
             "timezone": "auto",
         }
-        response = httpx.get(url=url, params=params)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url=url, params=params)
         data = response.json()
         daily_report = ""
 
