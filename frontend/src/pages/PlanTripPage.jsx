@@ -6,17 +6,21 @@ import {
   Sparkles,
   MapPin,
   CalendarDays,
+  IndianRupee,
   UsersRound,
 } from "lucide-react";
 
 export default function PlanTripPage() {
+  const [origin, setOrigin] = useState("");
+  const [budget, setBudget] = useState("");
   const [destination, setDestination] = useState("");
   const [startDate, setStartDate] = useState("2026-09-08");
   const [endDate, setEndDate] = useState("2026-09-14");
   const [travelers, setTravelers] = useState(2);
-  const [tripPace, setTripPace] = useState("unhurried");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const calculatedDays = Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1);
 
   const handleCreateTrip = async (e) => {
     e.preventDefault();
@@ -27,9 +31,7 @@ export default function PlanTripPage() {
       return;
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.max(1, Math.ceil((end - start) / 86400000) + 1);
+    const days = calculatedDays;
 
     setLoading(true);
     try {
@@ -60,7 +62,40 @@ export default function PlanTripPage() {
 
       <form onSubmit={handleCreateTrip} className="page-form">
         <div className="form-card">
-          <h3 className="font-serif" style={{ fontSize: 18, marginBottom: 16 }}>1. Where & When</h3>
+          <h3 className="font-serif" style={{ fontSize: 18, marginBottom: 16 }}>Trip Basics</h3>
+          <div className="form-grid">
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Origin</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "0 12px" }}>
+                <MapPin size={16} color="#e8533e" />
+                <input
+                  type="text"
+                  placeholder="e.g. New York, USA"
+                  value={origin}
+                  onChange={(e) => setOrigin(e.target.value)}
+                  style={{ width: "100%", height: 42, background: "transparent", border: 0, outline: "none", color: "var(--foreground)" }}
+                />
+              </div>
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Approx. Budget</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "0 12px" }}>
+                <IndianRupee size={16} color="#e8533e" />
+                <input
+                  type="text"
+                  placeholder="e.g. ₹50,000"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  style={{ width: "100%", height: 42, background: "transparent", border: 0, outline: "none", color: "var(--foreground)" }}
+                />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div className="form-card">
+          <h3 className="font-serif" style={{ fontSize: 18, marginBottom: 16 }}>Where & When</h3>
           <div className="form-grid">
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Destination</span>
@@ -78,7 +113,7 @@ export default function PlanTripPage() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Dates</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>From</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "0 12px" }}>
                 <CalendarDays size={16} color="#e8533e" />
                 <input
@@ -86,54 +121,50 @@ export default function PlanTripPage() {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   style={{ width: "100%", height: 42, background: "transparent", border: 0, outline: "none", color: "var(--foreground)" }}
+                  required
                 />
               </div>
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Travelers</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>To</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "0 12px" }}>
-                <UsersRound size={16} color="#e8533e" />
-                <select
-                  value={travelers}
-                  onChange={(e) => setTravelers(Number(e.target.value))}
+                <CalendarDays size={16} color="#e8533e" />
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => setEndDate(e.target.value)}
                   style={{ width: "100%", height: 42, background: "transparent", border: 0, outline: "none", color: "var(--foreground)" }}
-                >
-                  <option value={1}>Solo (1 traveler)</option>
-                  <option value={2}>Couple / Pair (2 travelers)</option>
-                  <option value={4}>Small Group (3–4 travelers)</option>
-                  <option value={6}>Family / Group (5+ travelers)</option>
-                </select>
+                  required
+                />
               </div>
             </label>
+          </div>
+
+          <div style={{ marginTop: 12, fontSize: 13, color: "var(--muted-foreground)" }}>
+            Total duration: <strong style={{ color: "#e8533e" }}>{calculatedDays} {calculatedDays === 1 ? "day" : "days"}</strong>
           </div>
         </div>
 
         <div className="form-card">
-          <h3 className="font-serif" style={{ fontSize: 18, marginBottom: 16 }}>2. Cadence & Tone</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-            {[
-              { id: "unhurried", title: "Unhurried & Slow", desc: "Late starts, quiet cafes, afternoon downtime" },
-              { id: "balanced", title: "Balanced Rhythm", desc: "Curated key moments with room for serendipity" },
-              { id: "explorer", title: "Full Discovery", desc: "Dawn-to-dusk highlights & neighborhood walks" },
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTripPace(item.id)}
-                style={{
-                  padding: "14px 16px",
-                  borderRadius: 12,
-                  border: tripPace === item.id ? "2px solid #e8533e" : "1px solid var(--border)",
-                  background: tripPace === item.id ? "rgba(232, 83, 62, 0.04)" : "var(--background)",
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-              >
-                <strong style={{ fontSize: 13, display: "block", color: tripPace === item.id ? "#e8533e" : "var(--foreground)" }}>{item.title}</strong>
-                <span style={{ fontSize: 11, color: "var(--muted-foreground)", display: "block", marginTop: 4 }}>{item.desc}</span>
-              </button>
-            ))}
+          <h3 className="font-serif" style={{ fontSize: 18, marginBottom: 16 }}>Travelers</h3>
+          <div style={{ maxWidth: 320 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--muted-foreground)" }}>Total Number of Travelers</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "0 12px" }}>
+                <UsersRound size={16} color="#e8533e" />
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={travelers}
+                  onChange={(e) => setTravelers(Math.max(1, Number(e.target.value) || 1))}
+                  style={{ width: "100%", height: 42, background: "transparent", border: 0, outline: "none", color: "var(--foreground)" }}
+                  required
+                />
+              </div>
+            </label>
           </div>
         </div>
 
