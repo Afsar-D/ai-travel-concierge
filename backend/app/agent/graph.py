@@ -36,8 +36,16 @@ async def generate_iternerary(state: AgentState) -> dict:
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
     Provide an engaging, inspiring, and well-structured response."""
 
+    if any(
+        keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
+    ):
+        return {
+            "message": [
+                f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
+            ]
+        }
     response = await client.aio.models.generate_content(
-        model='gemini-3.5-flash-lite',
+        model="gemini-3.5-flash-lite",
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=1000),
     )

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.agent.state import AgentState
 from app.agent.graph import travel_agent
 from app.schema.chat import ChatRequest, ChatResponse
-
+import datetime
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 
@@ -21,4 +21,5 @@ async def handle_chat(payload: ChatRequest) -> ChatResponse:
         'flight_options':''
     }
     final_state = await travel_agent.ainvoke(inital_state)
+    
     return ChatResponse(reply=final_state['message'][-1],session_id='sess_123',status='success')
