@@ -1,3 +1,52 @@
 {
-  "python.REPL.enableREPLSmartSend": false
+  "python.REPL.enableREPLSmartSend": false,
+
+  // --- MINIMAL & COMPACT EXPLORER VIEW ---
+  "explorer.compactFolders": true,
+  "workbench.tree.indent": 10,
+  "workbench.tree.renderIndentGuides": "onHover",
+
+  // --- CLEAN BREADCRUMBS & PATH DISPLAY ---
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.filePath": "last",
+  "breadcrumbs.symbolPath": "last",
+
+  // --- EXPLORER NOISE & CLUTTER REDUCTION ---
+  "explorer.autoReveal": "focusNoScroll",
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+
+  // --- ADVANCED PRODUCTIVITY ENHANCEMENTS ---
+  // Displays live variable values directly inside code lines while debugging
+  "debug.inlineValues": "on",
+
+  // Keeps single-clicked files open in dedicated tabs without preview overwriting
+  "workbench.editor.enablePreview": false,
+
+  // Automatically syncs opening & closing HTML/JSX tags when editing
+  "editor.linkedEditing": true,
+
+  // Ignores whitespace noise when viewing Git diff comparisons
+  "diffEditor.ignoreTrimWhitespace": true,
+
+  // Excludes heavy vendor folders from global Ctrl+Shift+F searches for instant results
+  "search.exclude": {
+    "**/.venv": true,
+    "**/venv": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/__pycache__": true
+  },
+
+  // --- HIDE BUILD & CACHE NOISE FROM EXPLORER ---
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/__init__.py": true
+  }
 }
