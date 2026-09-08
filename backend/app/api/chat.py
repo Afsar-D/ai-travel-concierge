@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from app.agent.state import AgentState
 from app.agent.graph import travel_agent
 from app.schema.chat import ChatRequest, ChatResponse
-import datetime
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 

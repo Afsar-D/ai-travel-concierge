@@ -18,6 +18,14 @@ async def generate_iternerary(state: AgentState) -> dict:
     weather = state.get("weather_info", "No weather data available")
     message = state.get("message", [])
     guests = state["guest_count"]
+    if any(
+        keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
+    ):
+        return {
+            "message": [
+                f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
+            ]
+        }
     prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and memorable travel itinerary based on the user's specific trip context, budget tier, and live weather forecast.
     ### Trip Context:
     - Origin City: {origin}
@@ -36,14 +44,6 @@ async def generate_iternerary(state: AgentState) -> dict:
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
     Provide an engaging, inspiring, and well-structured response."""
 
-    if any(
-        keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
-    ):
-        return {
-            "message": [
-                f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
-            ]
-        }
     response = await client.aio.models.generate_content(
         model="gemini-3.5-flash-lite",
         contents=prompt,

@@ -70,9 +70,7 @@ async def get_weather_forecast(
         }
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, params=params)
-        data = response.json()
-        daily_report = ""
-
+        
         data = response.json()
 
         if "daily" not in data or not data["daily"].get("time"):
