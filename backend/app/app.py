@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from app.api import chat, health
 from app.tools import weather
 from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI(
     title="AI Travel Concierge",
     summary="Provide Guidance about travelling and your trips",
