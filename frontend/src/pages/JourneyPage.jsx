@@ -25,25 +25,73 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { createItinerary, getItineraries } from "../lib/api";
 
-const fallbackDayPlan = [
-  { number: "01", title: "Arrive slowly", copy: "Baixa check-in, a late custard tart, then sunset from Miradouro da Senhora do Monte.", tag: "18 min walk", icon: Navigation },
-  { number: "02", title: "Tiles, books & water", copy: "Azulejo Museum in the morning, time for Alfama lanes, and a Tagus-side table at dusk.", tag: "6 stops", icon: Landmark },
-  { number: "03", title: "The long table", copy: "LX Factory browsing, a relaxed lunch in Estrela, and a reservation at Prado.", tag: "1 reservation", icon: Coffee },
-];
-
-const initialPacking = [
-  { label: "Light layers", status: "3–4 pieces", done: true },
-  { label: "Walking shoes", status: "12k steps/day", done: false },
-  { label: "EU adapter", status: "Type C / F", done: true },
-  { label: "Compact umbrella", status: "Low chance", done: false },
-];
+const demoActiveTrip = {
+  destination: "Tokyo, Japan",
+  dates: "14–20 Oct 2026",
+  country: "Japan",
+  pace: "Vibrant & Balanced",
+  stay: "Shinjuku & Yanaka",
+  budget: "¥¥¥",
+  coords: "35.6762° N, 139.6503° E",
+  heroImage: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80",
+  pulse: {
+    title: "The pulse of Tokyo",
+    catchline: "Neon dusk, quiet alley mornings.",
+    note: "Early mornings in Yanaka feel like a village; evenings belong to Golden Gai jazz bars and subterranean ramen counters.",
+    tip: "Train pass card on phone before 08:30 rush",
+  },
+  weather: {
+    temp: "21°",
+    desc: "Crisp autumn breeze, clear skies",
+    rain: "5% chance",
+    sunset: "17:15",
+  },
+  days: [
+    {
+      number: "01",
+      title: "Touchdown & Neon Crossing",
+      copy: "Check into Hotel Groove Shinjuku, grab hand-pulled udon at Shin, and wander the neon glow of Omoide Yokocho.",
+      tag: "12 min walk",
+      icon: Navigation,
+    },
+    {
+      number: "02",
+      title: "Old Edo lanes & Craft Coffee",
+      copy: "Morning stroll through quiet Yanaka Ginza cemetery gardens, matcha tasting at Kayaba Coffee, and woodblock print galleries.",
+      tag: "5 stops",
+      icon: Landmark,
+    },
+    {
+      number: "03",
+      title: "Architecture, Art & Skyline Dusk",
+      copy: "Nezu Museum bamboo gardens in Aoyama, Omotesando backstreet boutiques, and sunset views from Roppongi Hills Mori Tower.",
+      tag: "Mori Art reservation",
+      icon: Coffee,
+    },
+    {
+      number: "04",
+      title: "Coastal Temple Day in Kamakura",
+      copy: "Scenic Enoden train along the Pacific coast, the Great Buddha at Kotoku-in, and sunset on Yuigahama beach.",
+      tag: "Day rail journey",
+      icon: Route,
+    },
+  ],
+  packing: [
+    { label: "Comfortable slip-on sneakers", status: "18k steps/day", done: true },
+    { label: "Suica / Pasmo transit IC card", status: "Apple / Google Wallet", done: true },
+    { label: "Pocket WiFi / eSIM active", status: "5G unlimited data", done: true },
+    { label: "Coin pouch & small cash", status: "¥20,000 for shrines & street stalls", done: true },
+    { label: "Light rain shell jacket", status: "Packable layer", done: false },
+    { label: "Universal Type-A plug adapter", status: "100V compatible", done: true },
+  ],
+};
 
 export default function JourneyPage() {
   const [hasTrip, setHasTrip] = useState(true);
   const [activeTab, setActiveTab] = useState("Route");
-  const [destination, setDestination] = useState("Lisbon, Portugal");
-  const [packingItems, setPackingItems] = useState(initialPacking);
-  const [dayPlan, setDayPlan] = useState(fallbackDayPlan);
+  const [destination, setDestination] = useState(demoActiveTrip.destination);
+  const [packingItems, setPackingItems] = useState(demoActiveTrip.packing);
+  const [dayPlan, setDayPlan] = useState(demoActiveTrip.days);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const updateRouteData = useCallback((itinerary) => {
@@ -65,10 +113,10 @@ export default function JourneyPage() {
         const itineraries = await getItineraries();
         if (itineraries.length) {
           updateRouteData(itineraries[0]);
-          setHasTrip(true);
         }
+        setHasTrip(true);
       } catch {
-        setHasTrip(localStorage.getItem("has_active_journey") !== "false");
+        setHasTrip(true);
       }
     }
 
@@ -211,7 +259,7 @@ export default function JourneyPage() {
           <section aria-labelledby="departure-heading">
             <div className="section-heading">
               <h2 id="departure-heading">Upcoming departure</h2>
-              
+
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   type="button"
@@ -269,29 +317,29 @@ export default function JourneyPage() {
                     <span className="status-pulse" />Route in progress
                   </span>
                   <h2 className="trip-place font-serif">{destination.split(',')[0]}</h2>
-                  <p className="trip-dates">8–14 September 2026 · {destination.split(',')[1] || 'Portugal'}</p>
+                  <p className="trip-dates">{demoActiveTrip.dates} · {destination.split(',')[1]?.trim() || demoActiveTrip.country}</p>
                 </div>
                 <div className="trip-data">
                   <div>
                     <span>Trip pace</span>
-                    <strong>Unhurried</strong>
+                    <strong>{demoActiveTrip.pace}</strong>
                   </div>
                   <div>
                     <span>Stay</span>
-                    <strong>Alfama</strong>
+                    <strong>{demoActiveTrip.stay}</strong>
                   </div>
                   <div>
                     <span>Budget</span>
-                    <strong>€€</strong>
+                    <strong>{demoActiveTrip.budget}</strong>
                   </div>
                 </div>
               </div>
               <div className="trip-image">
                 <img
-                  src="https://images.unsplash.com/photo-1509840144524-f679051874b2?auto=format&fit=crop&w=1000&q=80"
-                  alt="Lisbon rooftops overlooking the Tagus River at golden hour"
+                  src={demoActiveTrip.heroImage}
+                  alt={`${destination} streetscape`}
                 />
-                <span className="hero-image-note">38.7223° N, 9.1393° W</span>
+                <span className="hero-image-note">{demoActiveTrip.coords}</span>
               </div>
             </article>
           </section>
@@ -426,18 +474,18 @@ export default function JourneyPage() {
                 <CloudSun size={26} />
               </div>
               <div className="weather-copy">
-                <strong>24°</strong>
-                <span>Soft sun, light coastal air</span>
+                <strong>{demoActiveTrip.weather.temp}</strong>
+                <span>{demoActiveTrip.weather.desc}</span>
               </div>
             </div>
             <div className="weather-meta">
               <div>
                 <span>Rain</span>
-                <strong>12% chance</strong>
+                <strong>{demoActiveTrip.weather.rain}</strong>
               </div>
               <div>
                 <span>Sunset</span>
-                <strong>19:46</strong>
+                <strong>{demoActiveTrip.weather.sunset}</strong>
               </div>
             </div>
           </section>
@@ -476,16 +524,15 @@ export default function JourneyPage() {
 
           <section className="note-card pulse-card" aria-labelledby="pulse-heading">
             <span className="note-card-title" id="pulse-heading">
-              <Umbrella size={16} />The pulse of Lisbon
+              <Umbrella size={16} />{demoActiveTrip.pulse.title}
             </span>
-            <div className="pulse-large font-serif">Late, luminous.</div>
+            <div className="pulse-large font-serif">{demoActiveTrip.pulse.catchline}</div>
             <p>
-              Dinner begins slowly, the steepest streets reward a pause, and the best tilework
-              hides in plain sight.
+              {demoActiveTrip.pulse.note}
             </p>
             <div className="pulse-footer">
               <span>
-                <Coffee size={12} />Try before 10:00
+                <Coffee size={12} />{demoActiveTrip.pulse.tip}
               </span>
               <span>Local note</span>
             </div>
