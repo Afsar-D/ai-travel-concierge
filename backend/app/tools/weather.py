@@ -37,11 +37,14 @@ WMO_CODES = {
 }
 
 
-def get_coords(location: str) -> Any:
-    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1&language=en&format=json"
-    data = httpx.get(geo_url)
+def get_coords(location: str, origin: str) -> Any:
+    geo_url_location = f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1&language=en&format=json"
+    geo_url_origin = f"https://geocoding-api.open-meteo.com/v1/search?name={origin}&count=1&language=en&format=json"
+    data = httpx.get(geo_url_location)
+    data_origin = httpx.get(geo_url_origin)
     response = data.json()
-    if "results" in response:
+    response_origin = data_origin.json()
+    if "results" in response and "results" in response_origin:
         lat = response["results"][0]["latitude"]
         lon = response["results"][0]["longitude"]
         return {"coords": {"lat": lat, "lon": lon}, "status": 200}
@@ -49,9 +52,11 @@ def get_coords(location: str) -> Any:
 
 
 @router.get("")
-async def get_weather_forecast(start_date: str, end_date: str, location: str) -> str:
+async def get_weather_forecast(
+    start_date: str, end_date: str, location: str, origin: str
+) -> str:
     url = "https://api.open-meteo.com/v1/forecast"
-    d = get_coords(location=location)
+    d = get_coords(location=location, origin=origin)
     if d["status"] == 200:
         lat = d["coords"]["lat"]
         lon = d["coords"]["lon"]
@@ -65,10 +70,15 @@ async def get_weather_forecast(start_date: str, end_date: str, location: str) ->
         }
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, params=params)
+        
         data = response.json()
-        daily_report = ""
 
+        if "daily" not in data or not data["daily"].get("time"):
+            return f"Weather forecast unavailable for {location} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
+
+        daily_report = ""
         for i in range(len(data["daily"]["time"])):
-            daily_report += f"On {data['daily']['time'][i]} : Min temp {data['daily']['temperature_2m_min'][i]} and Max temp {data['daily']['temperature_2m_max'][i]}. Likely to be {WMO_CODES[data['daily']['weather_code'][i]]['icon']}  {WMO_CODES[data['daily']['weather_code'][i]]['desc']} \n"
+            daily_report += f"On {data['daily']['time'][i]} : Min temp {data['daily']['temperature_2m_min'][i]}°C and Max temp {data['daily']['temperature_2m_max'][i]}°C. Likely to be {WMO_CODES[data['daily']['weather_code'][i]]['icon']} {WMO_CODES[data['daily']['weather_code'][i]]['desc']}\n"
+
         return f"Weather Report for {location} from {start_date} to {end_date}:\n{daily_report}"
-    return f"Error {d['status']} : {location} not found"
+    return f"Error {d['status']} : {location} or {origin} not found"
