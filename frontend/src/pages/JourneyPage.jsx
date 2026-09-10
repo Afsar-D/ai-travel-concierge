@@ -12,6 +12,7 @@ import {
   ListChecks,
   Luggage,
   MapPin,
+  MessageSquare,
   MoreHorizontal,
   Navigation,
   Plus,
@@ -260,7 +261,38 @@ export default function JourneyPage() {
             <div className="section-heading">
               <h2 id="departure-heading">Upcoming departure</h2>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <Link
+                  to="/chat"
+                  state={{
+                    trip: {
+                      destination,
+                      startDate: "2026-10-14",
+                      endDate: "2026-10-20",
+                      origin: "Delhi, India",
+                      budget: "medium",
+                      guestCount: 2,
+                    }
+                  }}
+                  className="route-tab"
+                  style={{
+                    height: 32,
+                    padding: "0 12px",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: "#ffffff",
+                    background: "#e8533e",
+                    border: "1px solid #e8533e",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  <MessageSquare size={13} /> Ask AI (Trip Doubts)
+                </Link>
+
                 <button
                   type="button"
                   className="route-tab"

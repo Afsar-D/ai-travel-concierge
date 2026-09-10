@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import AuthPage from "./pages/AuthPage";
+import ChatPage from "./pages/ChatPage";
 import ExplorePage from "./pages/ExplorePage";
 import FlightFinderPage from "./pages/FlightFinderPage";
 import HomePage from "./pages/HomePage";
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/login" element={<AuthPage />} />
         <Route element={<Layout />}>
           <Route path="journey" element={<JourneyPage />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="plan" element={<PlanTripPage />} />
           <Route path="my-journeys" element={<MyJourneysPage />} />
           <Route path="explore" element={<ExplorePage />} />
