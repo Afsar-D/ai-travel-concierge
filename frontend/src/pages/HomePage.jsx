@@ -47,7 +47,7 @@ export default function HomePage() {
           <Link className="marketing-brand" to="/">
             <img src={logo} alt="Wayfinder Logo" />
             <div className="brand-text">
-              <strong>wayfinder</strong>
+              <strong>WayFinder</strong>
               <small>AI TRAVEL PLANNER</small>
             </div>
           </Link>

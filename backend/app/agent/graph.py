@@ -1,14 +1,14 @@
 from langgraph.graph import StateGraph, START, END
 from app.agent.state import AgentState
 from app.agent.tools import fetch_weather
-from google import genai
+from groq import Groq
 from google.genai import types
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 async def generate_iternerary(state: AgentState) -> dict:
@@ -44,12 +44,19 @@ async def generate_iternerary(state: AgentState) -> dict:
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
     Provide an engaging, inspiring, and well-structured response."""
 
-    response = await client.aio.models.generate_content(
-        model="gemini-3.5-flash-lite",
-        contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=1000),
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        temperature=0.7,
+        max_completion_tokens=1000,
     )
-    return {"message": [response.text]}
+
+    return {"message": [response.choices[0].message.content]}
 
 
 workflow = StateGraph(AgentState)
