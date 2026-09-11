@@ -21,7 +21,7 @@
   "debug.inlineValues": "on",
 
   // Keeps single-clicked files open in dedicated tabs without preview overwriting
-  "workbench.editor.enablePreview": false,
+  "workbench.editor.enablePreview": true,
 
   // Automatically syncs opening & closing HTML/JSX tags when editing
   "editor.linkedEditing": true,
