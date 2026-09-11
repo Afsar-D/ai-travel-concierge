@@ -9,7 +9,6 @@ import {
   CloudSun,
   Coffee,
   Landmark,
-  ListChecks,
   Luggage,
   MapPin,
   MessageSquare,
@@ -24,7 +23,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createItinerary, getItineraries } from "../lib/api";
+import { getItineraries } from "../lib/api";
 
 const demoActiveTrip = {
   destination: "Tokyo, Japan",
@@ -89,12 +88,22 @@ const demoActiveTrip = {
 
 export default function JourneyPage() {
   const [hasTrip, setHasTrip] = useState(true);
-  const [activeTab, setActiveTab] = useState("Route");
   const [destination, setDestination] = useState(demoActiveTrip.destination);
-  const [packingItems, setPackingItems] = useState(demoActiveTrip.packing);
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem("journey_custom_notes");
+    return saved
+      ? JSON.parse(saved)
+      : [
+        { id: 1, text: "Exchange ¥20,000 for shrines & street stalls", done: true },
+        { id: 2, text: "Buy Suica / Pasmo transit IC card in Apple Wallet", done: true },
+        { id: 3, text: "Pick up pocket WiFi at Haneda Airport", done: false },
+      ];
+  });
+  const [newNote, setNewNote] = useState("");
+  const [showAddNote, setShowAddNote] = useState(false);
   const [dayPlan, setDayPlan] = useState(demoActiveTrip.days);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const updateRouteData = useCallback((itinerary) => {
     setDestination(itinerary.destination);
     if (itinerary.days) {
@@ -124,24 +133,6 @@ export default function JourneyPage() {
     loadLatestItinerary();
   }, [updateRouteData]);
 
-  const generateRoute = async () => {
-    const place = destination.trim() || "your destination";
-    setLoading(true);
-
-    try {
-      const itinerary = await createItinerary({ destination: place, days: 3 });
-      updateRouteData(itinerary);
-      setHasTrip(true);
-      localStorage.setItem("has_active_journey", "true");
-      setActiveTab("Route");
-      toast.success(`A fresh route for ${place} is ready to review.`);
-    } catch {
-      toast.error("Could not generate the route. Is the backend running?");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCompleteTrip = () => {
     toast.success(`Trip to ${destination} marked as Completed! Moved to My Journeys archive.`);
     setHasTrip(false);
@@ -156,12 +147,32 @@ export default function JourneyPage() {
     }
   };
 
-  const togglePackItem = (index) => {
-    setPackingItems((items) =>
-      items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, done: !item.done } : item
-      )
-    );
+  const handleAddNote = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = newNote.trim();
+    if (!trimmed) {
+      setShowAddNote(false);
+      return;
+    }
+    const updated = [...notes, { id: Date.now(), text: trimmed, done: false }];
+    setNotes(updated);
+    localStorage.setItem("journey_custom_notes", JSON.stringify(updated));
+    setNewNote("");
+    setShowAddNote(false);
+    toast.success("Note added");
+  };
+
+  const toggleNote = (id) => {
+    const updated = notes.map((n) => (n.id === id ? { ...n, done: !n.done } : n));
+    setNotes(updated);
+    localStorage.setItem("journey_custom_notes", JSON.stringify(updated));
+  };
+
+  const deleteNote = (id) => {
+    const updated = notes.filter((n) => n.id !== id);
+    setNotes(updated);
+    localStorage.setItem("journey_custom_notes", JSON.stringify(updated));
+    toast.info("Note deleted");
   };
 
   if (!hasTrip) {
@@ -210,9 +221,9 @@ export default function JourneyPage() {
         </p>
       </section>
 
-      <section className="planner-strip" aria-label="Start a new journey">
-        <label className="plan-field">
-          <span className="field-label">Where to?</span>
+      <section className="planner-strip trip-info-strip" aria-label="Journey overview">
+        <div className="plan-field">
+          <span className="field-label">Destination</span>
           <span className="field-value">
             <MapPin size={15} />
             <input
@@ -221,38 +232,22 @@ export default function JourneyPage() {
               aria-label="Destination"
               value={destination}
               onChange={(event) => setDestination(event.target.value)}
+              placeholder="Where to?"
             />
           </span>
-        </label>
-        <button
-          className="plan-field"
-          type="button"
-          onClick={() => toast.info("Date picker coming in the full planning flow.")}
-        >
-          <span className="field-label">When</span>
+        </div>
+        <div className="plan-field">
+          <span className="field-label">Dates</span>
           <span className="field-value">
             <CalendarDays size={15} />08 — 14 Sep
           </span>
-        </button>
-        <button
-          className="plan-field"
-          type="button"
-          onClick={() => toast.info("Traveler details are saved for this route.")}
-        >
+        </div>
+        <div className="plan-field">
           <span className="field-label">Travelers</span>
           <span className="field-value">
             <UsersRound size={15} />2 adults
           </span>
-        </button>
-        <button
-          className="planner-button"
-          type="button"
-          disabled={loading}
-          onClick={generateRoute}
-        >
-          <Sparkles size={15} />
-          {loading ? "Generating..." : "Generate route"}
-        </button>
+        </div>
       </section>
 
       <div className="board-grid">
@@ -262,37 +257,6 @@ export default function JourneyPage() {
               <h2 id="departure-heading">Upcoming departure</h2>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <Link
-                  to="/chat"
-                  state={{
-                    trip: {
-                      destination,
-                      startDate: "2026-10-14",
-                      endDate: "2026-10-20",
-                      origin: "Delhi, India",
-                      budget: "medium",
-                      guestCount: 2,
-                    }
-                  }}
-                  className="route-tab"
-                  style={{
-                    height: 32,
-                    padding: "0 12px",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "#ffffff",
-                    background: "#e8533e",
-                    border: "1px solid #e8533e",
-                    textDecoration: "none",
-                    fontWeight: 700,
-                  }}
-                >
-                  <MessageSquare size={13} /> Ask AI (Trip Doubts)
-                </Link>
-
                 <button
                   type="button"
                   className="route-tab"
@@ -342,7 +306,7 @@ export default function JourneyPage() {
                 </button>
               </div>
             </div>
-            <article className="trip-hero">
+            <article className="trip-hero compact-hero">
               <div className="trip-summary">
                 <div>
                   <span className="status-label">
@@ -365,19 +329,68 @@ export default function JourneyPage() {
                     <strong>{demoActiveTrip.budget}</strong>
                   </div>
                 </div>
-              </div>
-              <div className="trip-image">
-                <img
-                  src={demoActiveTrip.heroImage}
-                  alt={`${destination} streetscape`}
-                />
-                <span className="hero-image-note">{demoActiveTrip.coords}</span>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+                  <Link
+                    to="/chat"
+                    state={{
+                      trip: {
+                        destination,
+                        startDate: "2026-10-14",
+                        endDate: "2026-10-20",
+                        origin: "Delhi, India",
+                        budget: "medium",
+                        guestCount: 2,
+                      }
+                    }}
+                    className="route-tab"
+                    style={{
+                      height: 32,
+                      padding: "0 14px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      color: "#ffffff",
+                      background: "#e8533e",
+                      border: "1px solid #e8533e",
+                      textDecoration: "none",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <MessageSquare size={13} /> Ask AI (Trip Doubts)
+                  </Link>
+
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(destination)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="route-tab"
+                    style={{
+                      height: 32,
+                      padding: "0 14px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      color: "#172332",
+                      background: "#f0ebe1",
+                      border: "1px solid #ddd6cc",
+                      textDecoration: "none",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Visit on Google <ArrowUpRight size={13} />
+                  </a>
+                </div>
               </div>
             </article>
           </section>
 
           <section className="route-panel" aria-labelledby="route-heading">
-            <div className="section-heading" style={{ marginBottom: 0 }}>
+            <div className="section-heading" style={{ marginBottom: 28 }}>
               <h2 id="route-heading">The route</h2>
               <button
                 className="text-link"
@@ -387,101 +400,39 @@ export default function JourneyPage() {
                 Open itinerary <ChevronRight size={13} />
               </button>
             </div>
-            <div className="route-tabs" role="tablist" aria-label="Itinerary display">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "Route"}
-                className={`route-tab ${activeTab === "Route" ? "active" : ""}`}
-                onClick={() => setActiveTab("Route")}
-              >
-                Route sketch
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "Schedule"}
-                className={`route-tab ${activeTab === "Schedule" ? "active" : ""}`}
-                onClick={() => setActiveTab("Schedule")}
-              >
-                Daily schedule
-              </button>
-            </div>
 
-            {activeTab === "Route" ? (
-              <div className="itinerary-list">
-                {dayPlan.map((day) => {
-                  const Icon = day.icon;
-                  return (
-                    <article className="day-row" key={day.number}>
-                      <span className="day-marker">
-                        <Route size={14} />
-                      </span>
-                      <span className="day-number">Day {day.number}</span>
-                      <div className="day-content">
-                        <h3>{day.title}</h3>
-                        <p>{day.copy}</p>
+            <div className="roadmap-timeline">
+              <div className="roadmap-spine" />
+              {dayPlan.map((day, idx) => {
+                const Icon = day.icon;
+                const isEven = idx % 2 === 0;
+                return (
+                  <div key={day.number} className={`roadmap-step ${isEven ? "step-left" : "step-right"}`}>
+                    <div className="roadmap-node">{idx + 1}</div>
+                    <article className="roadmap-card">
+                      <div className="roadmap-card-header">
+                        <span className="roadmap-tag">
+                          <Icon size={12} />
+                          {day.tag}
+                        </span>
+                        <span className="roadmap-day-badge">Day {day.number}</span>
                       </div>
-                      <span className="day-tag">
-                        <Icon size={11} />
-                        {day.tag}
-                      </span>
+                      <h3 className="roadmap-title font-serif">{day.title}</h3>
+                      <p className="roadmap-copy">{day.copy}</p>
+                      <div className="roadmap-footer">
+                        <span className="roadmap-status">Scheduled stop</span>
+                        <button
+                          type="button"
+                          className="roadmap-action-btn"
+                          onClick={() => toast.info(`Day ${day.number} details opened.`)}
+                        >
+                          View details <ChevronRight size={12} />
+                        </button>
+                      </div>
                     </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="schedule-note">
-                <ListChecks size={18} />
-                <div>
-                  <h3>A schedule that still has space.</h3>
-                  <p>
-                    Three key moments are planned each day; the gaps are intentionally left
-                    open for a slow coffee, a wrong turn, or a place you hear about on the
-                    way.
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="collection" aria-labelledby="collection-heading">
-            <div className="section-heading">
-              <h2 id="collection-heading">On your horizon</h2>
-              <Link
-                className="text-link"
-                to="/saved"
-              >
-                View all <ArrowUpRight size={13} />
-              </Link>
-            </div>
-            <div className="collection-grid">
-              <article className="collection-card">
-                <div className="collection-photo">
-                  <img
-                    src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=600&q=80"
-                    alt="Quiet Kyoto lane with a vermilion shrine gate"
-                  />
-                </div>
-                <div className="collection-info">
-                  <span>Spring note</span>
-                  <h3 className="font-serif">Kyoto</h3>
-                  <p>Temples, tableware, early light</p>
-                </div>
-              </article>
-              <article className="collection-card">
-                <div className="collection-photo">
-                  <img
-                    src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80"
-                    alt="Dolomites mountain ridgeline above a moss green valley"
-                  />
-                </div>
-                <div className="collection-info">
-                  <span>Long weekend</span>
-                  <h3 className="font-serif">Dolomites</h3>
-                  <p>Rain air, ridgelines, refuge tables</p>
-                </div>
-              </article>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>
@@ -522,35 +473,144 @@ export default function JourneyPage() {
             </div>
           </section>
 
-          <section className="note-card" aria-labelledby="packing-heading">
+          <section className="note-card" aria-labelledby="notes-heading">
             <div className="note-card-header">
-              <span className="note-card-title" id="packing-heading">
-                <Luggage size={16} />Packing snapshot
+              <span className="note-card-title" id="notes-heading">
+                <Luggage size={16} />Custom notes
               </span>
               <button
-                className="note-card-action"
                 type="button"
-                aria-label="Packing options"
-                onClick={() => toast.info("Your full packing list is ready to expand.")}
+                onClick={() => {
+                  if (showAddNote && newNote.trim()) {
+                    handleAddNote();
+                  } else {
+                    setShowAddNote((prev) => !prev);
+                  }
+                }}
+                style={{
+                  height: 26,
+                  padding: "0 10px",
+                  background: "#e8533e",
+                  color: "#ffffff",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                }}
               >
-                <MoreHorizontal size={17} />
+                Add a Note
               </button>
             </div>
-            <div className="packing-list">
-              {packingItems.map((item, index) => (
+
+            <div className={`note-input-container ${showAddNote ? "open" : ""}`}>
+              <form onSubmit={handleAddNote} style={{ display: "flex", gap: 6 }}>
+                <input
+                  type="text"
+                  autoFocus={showAddNote}
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowAddNote(false);
+                      setNewNote("");
+                    }
+                  }}
+                  placeholder="Add a new note (press Enter)..."
+                  style={{
+                    flex: 1,
+                    height: 32,
+                    padding: "0 10px",
+                    fontSize: 11,
+                    borderRadius: 6,
+                    border: "1px solid #ddd7ce",
+                    background: "#fffdf8",
+                    color: "#172332",
+                    outline: "none",
+                  }}
+                />
                 <button
-                  className="pack-item animate-none"
-                  type="button"
-                  key={item.label}
-                  onClick={() => togglePackItem(index)}
+                  type="submit"
+                  style={{
+                    height: 32,
+                    padding: "0 10px",
+                    background: "#e8533e",
+                    color: "#ffffff",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    cursor: "pointer",
+                  }}
                 >
-                  <span className={`pack-check ${item.done ? "done" : ""}`}>
-                    <Check size={11} />
-                  </span>
-                  {item.label}
-                  <span className="pack-status">{item.status}</span>
+                  <Plus size={13} /> Add
                 </button>
-              ))}
+              </form>
+            </div>
+
+            <div className="packing-list">
+              {notes.length === 0 ? (
+                <div style={{ padding: "16px 0", textAlign: "center", color: "#8a918e", fontSize: 11 }}>
+                  No custom notes yet. Add one above!
+                </div>
+              ) : (
+                notes.map((item) => (
+                  <div className="pack-item" key={item.id} style={{ justifyContent: "space-between" }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleNote(item.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        background: "transparent",
+                        border: 0,
+                        padding: 0,
+                        textAlign: "left",
+                        flex: 1,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span className={`pack-check ${item.done ? "done" : ""}`}>
+                        <Check size={11} />
+                      </span>
+                      <span
+                        style={{
+                          color: item.done ? "#9ba3a1" : "#263440",
+                          textDecoration: item.done ? "line-through" : "none",
+                          fontSize: 11,
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {item.text}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete note"
+                      onClick={() => deleteNote(item.id)}
+                      style={{
+                        background: "transparent",
+                        border: 0,
+                        padding: "4px 6px",
+                        color: "#9ba3a1",
+                        cursor: "pointer",
+                        borderRadius: 4,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#b94839")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#9ba3a1")}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
