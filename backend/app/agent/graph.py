@@ -5,13 +5,15 @@ from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
+from typing import Any
+from app.database.session import init_db, get_session
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 
-async def generate_iternerary(state: AgentState) -> dict:
+async def generate_iternerary(state: AgentState) -> Any:
     origin = state["origin"]
     destination = state["destination"]
     budget = state["budget"]
@@ -21,11 +23,7 @@ async def generate_iternerary(state: AgentState) -> dict:
     if any(
         keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
     ):
-        return {
-            "message": [
-                f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
-            ]
-        }
+        yield f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
     prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and memorable travel itinerary based on the user's specific trip context, budget tier, and live weather forecast.
     ### Trip Context:
     - Origin City: {origin}
@@ -44,12 +42,34 @@ async def generate_iternerary(state: AgentState) -> dict:
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
     Provide an engaging, inspiring, and well-structured response."""
 
-    response = await client.aio.models.generate_content(
+    response = await client.aio.models.generate_content_stream(
         model="gemini-3.5-flash-lite",
         contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=1000),
+        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=2500),
     )
-    return {"message": [response.text]}
+    async for chunk in response:
+        yield chunk.text
+
+
+async def continuous_chat_stream(history: list):
+    formatted_list = []
+    for chat in history:
+        if chat["sender"] == "user":
+            formatted_list.append({"role": "user", "parts": [chat["content"]]})
+        else:
+            formatted_list.append({"role": "model", "parts": [chat["content"]]})
+    return formatted_list
+
+
+async def chat_stream(history: list, new_message: str):
+    chat = client.aio.chats.create(
+        model="gemini-3.5-flash-lite",
+        history=history,
+        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=1500),
+    )
+    response_stream = await chat.send_message_stream(new_message)
+    async for chunk in response_stream:
+        yield chunk.text
 
 
 workflow = StateGraph(AgentState)

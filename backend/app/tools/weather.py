@@ -1,8 +1,7 @@
 from fastapi import APIRouter
-from typing import Any, Tuple
+from typing import Any
 import httpx
-import asyncio
-from cache import get_cached_weather, set_cached_weather
+from app.tools.cache import get_cached_weather, set_cached_weather
 
 router = APIRouter(prefix="/tools/weather")
 
