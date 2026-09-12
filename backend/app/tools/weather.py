@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from typing import Any, Tuple
 import httpx
 import asyncio
+from cache import get_cached_weather, set_cached_weather
 
 router = APIRouter(prefix="/tools/weather")
 
@@ -53,10 +54,13 @@ def get_coords(location: str, origin: str) -> Any:
 
 @router.get("")
 async def get_weather_forecast(
-    start_date: str, end_date: str, location: str, origin: str
+    start_date: str, end_date: str, destination: str, origin: str
 ) -> str:
+    cache_key = f"weather:{origin}:{destination}:{start_date}:{end_date}"
+    if cached_data := await get_cached_weather(cache_key=cache_key):
+        return cached_data
     url = "https://api.open-meteo.com/v1/forecast"
-    d = get_coords(location=location, origin=origin)
+    d = get_coords(location=destination, origin=origin)
     if d["status"] == 200:
         lat = d["coords"]["lat"]
         lon = d["coords"]["lon"]
@@ -70,15 +74,14 @@ async def get_weather_forecast(
         }
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, params=params)
-        
         data = response.json()
 
         if "daily" not in data or not data["daily"].get("time"):
-            return f"Weather forecast unavailable for {location} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
+            return f"Weather forecast unavailable for {destination} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
 
         daily_report = ""
         for i in range(len(data["daily"]["time"])):
             daily_report += f"On {data['daily']['time'][i]} : Min temp {data['daily']['temperature_2m_min'][i]}°C and Max temp {data['daily']['temperature_2m_max'][i]}°C. Likely to be {WMO_CODES[data['daily']['weather_code'][i]]['icon']} {WMO_CODES[data['daily']['weather_code'][i]]['desc']}\n"
-
-        return f"Weather Report for {location} from {start_date} to {end_date}:\n{daily_report}"
-    return f"Error {d['status']} : {location} or {origin} not found"
+        await set_cached_weather(cache_key=cache_key, data=daily_report)
+        return daily_report
+    return f"Error {d['status']} : {destination} or {origin} not found"

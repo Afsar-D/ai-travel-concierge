@@ -10,8 +10,11 @@ dependencies = [
     "google>=3.0.0",
     "google-genai>=2.22.0",
     "langgraph>=1.2.11",
+    "psycopg2-binary>=2.9.13",
     "redis>=8.1.0",
+    "sqlalchemy>=2.0.52",
     "sqlmodel>=0.0.42",
+    "upstash-redis>=1.8.0",
     "uvicorn>=0.52.4",
 ]
 
