@@ -22,8 +22,8 @@ export default function ChatPage() {
   // Fallback to active trip or Tokyo demo
   const destination = tripState.destination || "Tokyo, Japan";
   const origin = tripState.origin || "Delhi, India";
-  const startDate = tripState.startDate || "2026-10-14";
-  const endDate = tripState.endDate || "2026-10-20";
+  const startDate = tripState.startDate || new Date().toISOString().split("T")[0];
+  const endDate = tripState.endDate || new Date(Date.now() + 6 * 86400000).toISOString().split("T")[0];
   const budget = tripState.budget || "medium";
   const guestCount = tripState.guestCount || 2;
 

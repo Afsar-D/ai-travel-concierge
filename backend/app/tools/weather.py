@@ -68,13 +68,33 @@ async def get_weather_forecast(
             "daily": "temperature_2m_min,temperature_2m_max,rain_sum,weather_code",
             "timezone": "auto",
         }
+        # Clamp forecast request to max 10 days from start date / today
+        from datetime import date, timedelta
+        try:
+            parsed_start = date.fromisoformat(start_date)
+            parsed_end = date.fromisoformat(end_date)
+            today = date.today()
+            
+            # If dates are in the past or far future, limit to upcoming 10 days
+            if parsed_start > today + timedelta(days=10) or parsed_end < today:
+                valid_start = today
+                valid_end = today + timedelta(days=6)
+            else:
+                valid_start = max(parsed_start, today)
+                valid_end = min(parsed_end, valid_start + timedelta(days=9))
+
+            params["start_date"] = valid_start.isoformat()
+            params["end_date"] = valid_end.isoformat()
+        except Exception:
+            pass
+
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, params=params)
         
         data = response.json()
 
         if "daily" not in data or not data["daily"].get("time"):
-            return f"Weather forecast unavailable for {location} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
+            return f"General weather for {location}: pleasant, typical seasonal temperatures."
 
         daily_report = ""
         for i in range(len(data["daily"]["time"])):

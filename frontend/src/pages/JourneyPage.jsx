@@ -336,8 +336,8 @@ export default function JourneyPage() {
                     state={{
                       trip: {
                         destination,
-                        startDate: "2026-10-14",
-                        endDate: "2026-10-20",
+                        startDate: new Date().toISOString().split("T")[0],
+                        endDate: new Date(Date.now() + 6 * 86400000).toISOString().split("T")[0],
                         origin: "Delhi, India",
                         budget: "medium",
                         guestCount: 2,
@@ -614,21 +614,6 @@ export default function JourneyPage() {
             </div>
           </section>
 
-          <section className="note-card pulse-card" aria-labelledby="pulse-heading">
-            <span className="note-card-title" id="pulse-heading">
-              <Umbrella size={16} />{demoActiveTrip.pulse.title}
-            </span>
-            <div className="pulse-large font-serif">{demoActiveTrip.pulse.catchline}</div>
-            <p>
-              {demoActiveTrip.pulse.note}
-            </p>
-            <div className="pulse-footer">
-              <span>
-                <Coffee size={12} />{demoActiveTrip.pulse.tip}
-              </span>
-              <span>Local note</span>
-            </div>
-          </section>
         </aside>
       </div>
     </div>
