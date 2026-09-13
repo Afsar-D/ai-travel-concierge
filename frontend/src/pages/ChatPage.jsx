@@ -14,6 +14,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { sendChatMessage } from "../lib/api";
+import ReactMarkdown from "react-markdown";
 
 export default function ChatPage() {
   const location = useLocation();
@@ -249,12 +250,17 @@ export default function ChatPage() {
                       color: isUser ? "#ffffff" : "var(--foreground)",
                       border: isUser ? "none" : "1px solid var(--border)",
                       fontSize: 13.5,
-                      lineHeight: 1.55,
-                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.6,
                       boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
                     }}
                   >
-                    {m.text}
+                    {isUser ? (
+                      <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
+                    ) : (
+                      <div className="chat-markdown">
+                        <ReactMarkdown>{m.text}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                   <span
                     style={{

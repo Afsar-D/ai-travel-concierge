@@ -21,6 +21,15 @@
   --ring: #e8533e;
 }
 
+.chat-markdown p { margin: 0 0 8px 0; }
+.chat-markdown p:last-child { margin-bottom: 0; }
+.chat-markdown ul, .chat-markdown ol { margin: 4px 0 8px 18px; padding: 0; }
+.chat-markdown li { margin-bottom: 4px; }
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3, .chat-markdown h4 { margin: 12px 0 6px 0; font-weight: 700; }
+.chat-markdown h1:first-child, .chat-markdown h2:first-child, .chat-markdown h3:first-child { margin-top: 0; }
+.chat-markdown strong { font-weight: 700; }
+
+
 * { box-sizing: border-box; }
 
 html { background: var(--background); }
