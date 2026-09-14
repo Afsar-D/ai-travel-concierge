@@ -2,6 +2,15 @@ from fastapi import APIRouter
 from app.agent.state import AgentState
 from app.agent.graph import travel_agent
 from app.schema.chat import ChatRequest, ChatResponse
+from fastapi import Depends
+from fastapi.responses import StreamingResponse
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+import uuid
+from app.database.session import get_session
+from app.database.models import ChatMessages, ChatSession
+from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_stream
+
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 

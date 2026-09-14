@@ -7,7 +7,7 @@
   "workbench.tree.renderIndentGuides": "onHover",
 
   // --- CLEAN BREADCRUMBS & PATH DISPLAY ---
-  "breadcrumbs.enabled": true,
+  "breadcrumbs.enabled": false,
   "breadcrumbs.filePath": "last",
   "breadcrumbs.symbolPath": "last",
 
@@ -15,13 +15,14 @@
   "explorer.autoReveal": "focusNoScroll",
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
+  "material-icon-theme.hidesExplorerArrows":true,
 
   // --- ADVANCED PRODUCTIVITY ENHANCEMENTS ---
   // Displays live variable values directly inside code lines while debugging
   "debug.inlineValues": "on",
 
   // Keeps single-clicked files open in dedicated tabs without preview overwriting
-  "workbench.editor.enablePreview": true,
+  "workbench.editor.enablePreview": false,
 
   // Automatically syncs opening & closing HTML/JSX tags when editing
   "editor.linkedEditing": true,

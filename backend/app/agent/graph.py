@@ -6,14 +6,15 @@ from google.genai import types
 import os
 from dotenv import load_dotenv
 from typing import Any
-from app.database.session import init_db, get_session
+
+# from backend.app.database.session import init_db, get_session
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 
-async def generate_iternerary(state: AgentState) -> Any:
+async def generate_iternerary(state: AgentState) -> dict:
     origin = state["origin"]
     destination = state["destination"]
     budget = state["budget"]
@@ -23,7 +24,7 @@ async def generate_iternerary(state: AgentState) -> Any:
     if any(
         keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
     ):
-        yield f"Sorry, I could not find location data for '{destination}' or '{origin}'. Please check the city names/spelling and try again!"
+        weather = f"Live weather unavailable for {destination}. Use typical seasonal weather defaults."
     prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and memorable travel itinerary based on the user's specific trip context, budget tier, and live weather forecast.
     ### Trip Context:
     - Origin City: {origin}
@@ -42,13 +43,14 @@ async def generate_iternerary(state: AgentState) -> Any:
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
     Provide an engaging, inspiring, and well-structured response."""
 
-    response = await client.aio.models.generate_content_stream(
+    response = await client.aio.models.generate_content(
         model="gemini-3.5-flash-lite",
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=2500),
     )
-    async for chunk in response:
-        yield chunk.text
+    # async for chunk in response:
+    #     yield chunk.text
+    return {"message": [response.text]}
 
 
 async def continuous_chat_stream(history: list):

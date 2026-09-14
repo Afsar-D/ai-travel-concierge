@@ -9,8 +9,14 @@ client = Redis(url=os.getenv("UPSTASH_REDIS_REST_URL"), token=os.getenv("UPSTASH
 
 
 async def get_cached_weather(cache_key):
-    return await client.get(cache_key)
+    try:
+        return await client.get(cache_key)
+    except:
+        return None
 
 
 async def set_cached_weather(cache_key, data):
-    await client.set(key=cache_key, value=data, ex=86400)
+    try:
+        await client.set(key=cache_key, value=data, ex=86400)
+    except:
+        pass
