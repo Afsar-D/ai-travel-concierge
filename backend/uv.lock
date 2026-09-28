@@ -88,6 +88,7 @@ dependencies = [
     { name = "langgraph" },
     { name = "psycopg2-binary" },
     { name = "redis" },
+    { name = "serpapi" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
     { name = "upstash-redis" },
@@ -105,6 +106,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.2.11" },
     { name = "psycopg2-binary", specifier = ">=2.9.13" },
     { name = "redis", specifier = ">=8.1.0" },
+    { name = "serpapi", specifier = ">=1.1.2" },
     { name = "sqlalchemy", specifier = ">=2.0.52" },
     { name = "sqlmodel", specifier = ">=0.0.42" },
     { name = "upstash-redis", specifier = ">=1.8.0" },
@@ -1351,6 +1353,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9a/e7/c504a4bd2d95df2e0ab73714a9161ff1cf6ff1486922685e5f46dfd9eba8/sentry_sdk-2.68.1.tar.gz", hash = "sha256:6a97895230b04bc35d4d8d2e51e3b9e21902dfb0086ccf1f131a80c15c7b997a", size = 1019262, upload-time = "2026-08-24T13:09:38.108Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/28/465ad9382be98f2172e691f5836cf87f936773913ad7ab85ba1ba1d6706e/sentry_sdk-2.68.1-py3-none-any.whl", hash = "sha256:775b78871783a0ffd758276ad01b3bb2b1ebcdad8f9d2f0a7723f76b73c99b65", size = 520851, upload-time = "2026-08-24T13:09:36.186Z" },
+]
+
+[[package]]
+name = "serpapi"
+version = "1.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d7/cb/9b20af90c3481b424d988104be3a8ec096971b0fa2aaa6b4263e27e92503/serpapi-1.1.2.tar.gz", hash = "sha256:c4a16b5c99c3b34469cef12a3c9c74be18912324baad74d67d1d8820d4401b24", size = 76556, upload-time = "2026-09-22T05:40:13.884Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/3f/543ef4d3f5004134ce2bdc3f79313cfae37e739a29db4477febed918e55d/serpapi-1.1.2-py3-none-any.whl", hash = "sha256:446943df71e8afde69906be7e918b44c8d6cdcb84e69c37d01112c313945b384", size = 11288, upload-time = "2026-09-22T05:40:12.733Z" },
 ]
 
 [[package]]
