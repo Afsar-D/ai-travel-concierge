@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 @router.post("", response_model=ChatResponse)
 async def handle_chat(payload: ChatRequest) -> ChatResponse:
-    inital_state :AgentState={
+    inital_state: AgentState = {
         "message": [payload.message],
         "origin": payload.origin,
         "destination": payload.destination,
@@ -24,10 +24,12 @@ async def handle_chat(payload: ChatRequest) -> ChatResponse:
         "end_date": payload.end_date,
         "budget": payload.budget,
         "guest_count": payload.guest_count,
-        "session_id": payload.session_id or 'sess_12',
-        'weather_info':'',
-        'flight_options':''
+        "session_id": payload.session_id or "sess_12",
+        "weather_info": "",
+        "flight_options": "",
     }
     final_state = await travel_agent.ainvoke(inital_state)
-    
-    return ChatResponse(reply=final_state['message'][-1],session_id='sess_123',status='success')
+
+    return ChatResponse(
+        reply=final_state["message"][-1], session_id="sess_123", status="success"
+    )

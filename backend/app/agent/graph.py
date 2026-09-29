@@ -1,11 +1,11 @@
 from langgraph.graph import StateGraph, START, END
 from app.agent.state import AgentState
 from app.agent.tools import fetch_weather
+from app.agent.tools import fetch_flights
 from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
-from typing import Any
 
 # from backend.app.database.session import init_db, get_session
 
@@ -20,6 +20,7 @@ async def generate_iternerary(state: AgentState) -> dict:
     budget = state["budget"]
     weather = state.get("weather_info", "No weather data available")
     message = state.get("message", [])
+    flights = state.get("flight_options", "No Flights data available")
     guests = state["guest_count"]
     if any(
         keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
@@ -34,6 +35,8 @@ async def generate_iternerary(state: AgentState) -> dict:
     (Note: Low = budget stays, public transit, free attractions; Medium = balanced dining, popular sights; High = luxury stays, private tours, fine dining)
     - Real-Time Weather Forecast:
     {weather}
+    - Real-Time Flight Recommendations:
+    {flights}
     ### User's Specific Request / Message:
     {message}
     ### Instructions for Response Generation:
@@ -41,7 +44,15 @@ async def generate_iternerary(state: AgentState) -> dict:
     2. **Budget & Group Sizing**: Tailor all activity recommendations, dining spots, and accommodation tips strictly to the requested "{budget}" tier for {guests} guest(s).
     3. **Travel & Transit Tips**: Include practical ground travel advice for moving between {origin} and {destination}.
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
-    Provide an engaging, inspiring, and well-structured response."""
+    Provide an engaging, inspiring, and well-structured response.
+    Flight Information Integration Rules:
+    1. Examine the provided `flight_options` in the state.
+    2. If valid flight data is present:
+    - Highlight 2-3 top flight options including airline name, flight numbers, departure/arrival times, total duration, and ticket price in INR.
+    - Advise the traveler on optimal departure times relative to their Day 1 itinerary activities.
+    3. If `flight_options` is empty or indicates "Cities Not found":
+    - State clearly that real-time flight rates could not be resolved for the requested dates/cities.
+    - Provide standard estimated flight durations and general airport travel advice for the destination instead."""
 
     response = await client.aio.models.generate_content(
         model="gemini-3.5-flash-lite",
@@ -74,13 +85,24 @@ async def chat_stream(history: list, new_message: str):
         yield chunk.text
 
 
+def fetch_flights_decision(state: AgentState) -> str:
+    message = state.get("message", [])
+    combined_message = " ".join(message).lower()
+    keywords = ["flights", "flight", "airfare", "airplane", "fly", "plane", "airport"]
+    if any(word in combined_message for word in keywords):
+        return "flight_node"
+    return "llm_node"
+
+
 workflow = StateGraph(AgentState)
 
 workflow.add_node("weather_node", fetch_weather)
 workflow.add_node("llm_node", generate_iternerary)
+workflow.add_node("flight_node", fetch_flights)
 
 workflow.add_edge(START, "weather_node")
-workflow.add_edge("weather_node", "llm_node")
+workflow.add_conditional_edges("weather_node", fetch_flights_decision)
+workflow.add_edge("flight_node", "llm_node")
 workflow.add_edge("llm_node", END)
 
 travel_agent = workflow.compile()
