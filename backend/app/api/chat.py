@@ -27,6 +27,8 @@ async def handle_chat(payload: ChatRequest) -> ChatResponse:
         "session_id": payload.session_id or "sess_12",
         "weather_info": "",
         "flight_options": "",
+        "hotel_options":"",
+        "currency": payload.currency or "INR",
     }
     final_state = await travel_agent.ainvoke(inital_state)
 

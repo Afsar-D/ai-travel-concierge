@@ -12,3 +12,5 @@ class AgentState(TypedDict):
     session_id: str
     weather_info: str
     flight_options: str
+    hotel_options: str
+    currency : str

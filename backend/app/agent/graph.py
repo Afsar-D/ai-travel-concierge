@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, START, END
 from app.agent.state import AgentState
 from app.agent.tools import fetch_weather
 from app.agent.tools import fetch_flights
+from app.agent.tools import fetch_hotels
 from google import genai
 from google.genai import types
 import os
@@ -21,6 +22,7 @@ async def generate_iternerary(state: AgentState) -> dict:
     weather = state.get("weather_info", "No weather data available")
     message = state.get("message", [])
     flights = state.get("flight_options", "No Flights data available")
+    hotels = state.get("hotel_options", "No hotels Options available")
     guests = state["guest_count"]
     if any(
         keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
@@ -37,6 +39,8 @@ async def generate_iternerary(state: AgentState) -> dict:
     {weather}
     - Real-Time Flight Recommendations:
     {flights}
+    - Real-Time Hotel Recommendations:
+    {hotels}
     ### User's Specific Request / Message:
     {message}
     ### Instructions for Response Generation:
@@ -96,12 +100,14 @@ def fetch_flights_decision(state: AgentState) -> str:
 
 workflow = StateGraph(AgentState)
 
-workflow.add_node("weather_node", fetch_weather)
 workflow.add_node("llm_node", generate_iternerary)
+workflow.add_node("weather_node", fetch_weather)
 workflow.add_node("flight_node", fetch_flights)
+workflow.add_node("hotel_node", fetch_hotels)
 
 workflow.add_edge(START, "weather_node")
-workflow.add_conditional_edges("weather_node", fetch_flights_decision)
+workflow.add_edge("weather_node","hotel_node")
+workflow.add_conditional_edges("hotel_node", fetch_flights_decision)
 workflow.add_edge("flight_node", "llm_node")
 workflow.add_edge("llm_node", END)
 

@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     budget: str = "medium"
     guest_count: int = 1
     session_id: str | None = None
+    currency : str = "INR"
 
     @model_validator(mode="after")
     def validate_date_range(self) -> Self:
