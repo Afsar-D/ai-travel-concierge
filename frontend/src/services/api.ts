@@ -11,6 +11,7 @@ export interface ChatApiPayload {
   budget: string;
   guest_count: number;
   session_id?: string;
+  currency?: string;
 }
 
 export interface ChatApiResponse {
@@ -49,7 +50,8 @@ export async function sendChatMessage(
     end_date: trip.end_date,
     budget: trip.budget,
     guest_count: trip.guest_count,
-    session_id: trip.session_id || `sess_${Math.random().toString(36).substring(2, 9)}`,
+    session_id: trip.session_id || undefined,
+    currency: 'INR',
   };
 
   const response = await fetch(`${API_BASE_URL}/api/chat`, {

@@ -63,6 +63,8 @@ export interface FlightOption {
   price: string;
   stops: string;
   class: 'Economy' | 'Business' | 'First';
+  departureAirport?: string;
+  arrivalAirport?: string;
 }
 
 export interface HotelOption {
@@ -74,6 +76,7 @@ export interface HotelOption {
   amenities: string[];
   neighborhood: string;
   badge?: string;
+  rawReply?: string;
 }
 
 export interface TelemetryNode {

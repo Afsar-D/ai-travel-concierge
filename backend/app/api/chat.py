@@ -5,7 +5,7 @@ from app.schema.chat import ChatRequest, ChatResponse
 from fastapi import Depends
 from fastapi.responses import StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, col
 import uuid
 from app.database.session import get_session
 from app.database.models import ChatMessages, ChatSession
@@ -14,9 +14,11 @@ from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_st
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 
-@router.post("", response_model=ChatResponse)
-async def handle_chat(payload: ChatRequest) -> ChatResponse:
-    inital_state: AgentState = {
+@router.post("",response_model=None)
+async def handle_chat(
+    payload: ChatRequest, session: AsyncSession = Depends(get_session)
+) -> ChatResponse | StreamingResponse:
+    initial_state: AgentState = {
         "message": [payload.message],
         "origin": payload.origin,
         "destination": payload.destination,
@@ -24,14 +26,79 @@ async def handle_chat(payload: ChatRequest) -> ChatResponse:
         "end_date": payload.end_date,
         "budget": payload.budget,
         "guest_count": payload.guest_count,
-        "session_id": payload.session_id or "sess_12",
+        "session_id": payload.session_id if payload.session_id else str(uuid.uuid4()),
         "weather_info": "",
         "flight_options": "",
-        "hotel_options":"",
+        "hotel_options": "",
         "currency": payload.currency or "INR",
     }
-    final_state = await travel_agent.ainvoke(inital_state)
+    if payload.session_id:
+        statement = (
+            select(ChatMessages)
+            .where(ChatMessages.session_id == payload.session_id)
+            .order_by(col(ChatMessages.timestamp))
+        )
+        result = await session.exec(statement)
+        messages = result.all()
+        history = [
+            {"sender": message.sender, "content": message.content}
+            for message in messages
+        ]
+        formatted_hist = await continuous_chat_stream(history=history)
 
-    return ChatResponse(
-        reply=final_state["message"][-1], session_id="sess_123", status="success"
-    )
+        async def stream_generator():
+            full_reply: str = ""
+            async for chunk in chat_stream(formatted_hist, payload.message):
+                if chunk:
+                    full_reply += chunk
+                    yield chunk
+            ai_reply = ChatMessages(
+                sender="assistant",
+                content=full_reply,
+                session_id=initial_state["session_id"],
+            )
+            session.add(ai_reply)
+            await session.commit()
+
+        user_message = ChatMessages(
+            sender="user",
+            content=payload.message,
+            session_id=initial_state["session_id"],
+        )
+        session.add(user_message)
+        await session.commit()
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+    else:
+        context = ChatSession(
+            origin=initial_state["origin"],
+            destination=initial_state["destination"],
+            start_date=initial_state["start_date"],
+            end_date=initial_state["end_date"],
+            budget=initial_state["budget"],
+            guest_count=initial_state["guest_count"],
+            id=initial_state["session_id"],
+        )
+
+        session.add(context)
+        await session.commit()
+        user_message = ChatMessages(
+            sender="user",
+            content=payload.message,
+            session_id=initial_state["session_id"],
+        )
+        session.add(user_message)
+        await session.commit()
+
+        final_state = await travel_agent.ainvoke(initial_state)
+
+        ai_reply = final_state["message"][-1]
+        agent_message = ChatMessages(
+            sender="assistant", session_id=initial_state["session_id"], content=ai_reply
+        )
+        session.add(agent_message)
+        await session.commit()
+        return ChatResponse(
+            reply=final_state["message"][-1],
+            session_id=initial_state["session_id"],
+            status="success",
+        )

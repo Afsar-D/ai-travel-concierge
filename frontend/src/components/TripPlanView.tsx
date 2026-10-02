@@ -11,10 +11,13 @@ import {
   Download,
   Plane,
   Star,
-  MessageSquare
+  MessageSquare,
+  Building2,
+  Wifi
 } from 'lucide-react';
 import type { TripState, ItineraryDay, Activity } from '../types';
 import { getTripTheme } from '../utils/themeUtils';
+import { parseBackendReply } from '../utils/parser';
 
 interface TripPlanViewProps {
   trip: TripState;
@@ -38,6 +41,9 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
 
   // Dynamic Theme Palette for this specific trip
   const tripTheme = getTripTheme(trip.destination, trip.country);
+
+  // Parse Live Backend Flight & Hotel Data
+  const parsedData = parseBackendReply(trip.description || '', trip.origin, trip.destination);
 
   const calculateTotalCost = () => {
     let total = 0;
@@ -276,7 +282,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-slate-400">Total Activity & Dining Est.</span>
-                      <span className="text-white font-mono font-bold text-base">${totalCost} USD</span>
+                      <span className="text-white font-mono font-bold text-base">₹{totalCost.toLocaleString('en-IN')} INR</span>
                     </div>
                     <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                       <div
@@ -330,55 +336,165 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
         )}
 
         {activeTab === 'inventory' && (
-          <div className="space-y-6">
-            <h2 className="font-bold text-xl text-white">
-              Recommended Luxury Stays & Flight Connections
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-3xl glass-panel-dark border border-white/10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">Air France / British Airways</span>
-                  <span className="text-xs px-3 py-1 rounded-full bg-white/10 text-[#D4B886] font-bold border border-white/20">Business Class</span>
+          <div className="space-y-8 animate-fade-in">
+            
+            {/* 1. FLIGHT RECOMMENDATIONS SECTION */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Plane className="w-5 h-5 text-[#D4B886]" />
+                  <h2 className="font-bold text-lg text-white">
+                    Flight Recommendations ({trip.origin} ➔ {trip.destination})
+                  </h2>
                 </div>
-                <div className="flex justify-between text-xs py-3 border-y border-white/10">
-                  <div>
-                    <span className="font-bold block text-sm">08:45 AM</span>
-                    <span className="text-slate-400 text-[10px]">{trip.origin}</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-[10px] text-slate-400">1h 20m Direct</span>
-                    <Plane className="w-4 h-4 text-[#D4B886] mx-auto my-1" />
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold block text-sm">11:05 AM</span>
-                    <span className="text-slate-400 text-[10px]">{trip.destination}</span>
-                  </div>
-                </div>
+                <span className="text-xs px-3 py-1 rounded-full bg-white/10 text-slate-300 border border-white/15">
+                  SerpApi Google Flights
+                </span>
               </div>
 
-              <div className="p-6 rounded-3xl glass-panel-dark border border-white/10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">Le Grand Palace Hotel {trip.destination}</span>
-                  <div className="flex items-center space-x-1 text-[#D4B886] font-bold text-xs">
-                    <Star className="w-3.5 h-3.5 fill-[#D4B886]" />
-                    <span>5.0</span>
-                  </div>
+              {parsedData.flights.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {parsedData.flights.map((flight) => (
+                    <div 
+                      key={flight.id} 
+                      className="p-5 rounded-3xl glass-panel-dark border border-white/10 hover:border-white/25 transition-all duration-300 space-y-4 shadow-lg group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-sm text-white group-hover:text-[#D4B886] transition-colors duration-300">
+                          {flight.airline}
+                        </span>
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#D4B886] font-bold border border-white/20">
+                          {flight.stops}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs py-3 border-y border-white/10">
+                        <div>
+                          <span className="font-bold block text-sm text-white">{flight.departureTime}</span>
+                          <span className="text-slate-400 text-[10px] block truncate max-w-[100px]">
+                            {flight.departureAirport || trip.origin}
+                          </span>
+                        </div>
+
+                        <div className="text-center px-2">
+                          <span className="text-[10px] text-slate-400 block">{flight.duration}</span>
+                          <Plane className="w-4 h-4 text-[#D4B886] mx-auto my-1 transform rotate-90" />
+                        </div>
+
+                        <div className="text-right">
+                          <span className="font-bold block text-sm text-white">{flight.arrivalTime}</span>
+                          <span className="text-slate-400 text-[10px] block truncate max-w-[100px]">
+                            {flight.arrivalAirport || trip.destination}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="font-mono font-bold text-base text-[#D4B886]">{flight.price}</span>
+                        <a
+                          href={`https://www.google.com/travel/flights?q=flights+from+${encodeURIComponent(trip.origin)}+to+${encodeURIComponent(trip.destination)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1"
+                        >
+                          <span>Book Flight</span>
+                          <ExternalLink className="w-3 h-3 text-[#D4B886]" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-xs text-slate-300">Central Historic Quarter • Private Spa & Michelin Dining</p>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="font-mono font-bold text-base text-[#D4B886]">$680 / night</span>
-                  <a
-                    href={`https://www.google.com/travel/hotels?q=${encodeURIComponent(trip.destination)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold transition-colors duration-300"
-                  >
-                    View Hotel
-                  </a>
+              ) : (
+                <div className="p-6 rounded-3xl glass-panel-dark border border-white/10 text-center space-y-2">
+                  <Plane className="w-8 h-8 text-slate-400 mx-auto opacity-50" />
+                  <p className="text-xs text-slate-300">
+                    No explicit flight search keywords were detected in the prompt, or direct flight options are pending.
+                  </p>
+                  <span className="text-[11px] text-[#D4B886] block font-mono">
+                    Ask Concierge AI: "Show me flights from {trip.origin} to {trip.destination}" to query SerpApi.
+                  </span>
                 </div>
-              </div>
+              )}
             </div>
+
+            {/* 2. HOTEL RECOMMENDATIONS SECTION */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Building2 className="w-5 h-5 text-[#D4B886]" />
+                  <h2 className="font-bold text-lg text-white">
+                    Hotel & Stay Recommendations ({trip.destination})
+                  </h2>
+                </div>
+                <span className="text-xs px-3 py-1 rounded-full bg-white/10 text-slate-300 border border-white/15">
+                  SerpApi Google Hotels
+                </span>
+              </div>
+
+              {parsedData.hotels.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {parsedData.hotels.map((hotel) => (
+                    <div 
+                      key={hotel.id} 
+                      className="p-5 rounded-3xl glass-panel-dark border border-white/10 hover:border-white/25 transition-all duration-300 space-y-3 shadow-lg flex flex-col justify-between group"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-base text-white group-hover:text-[#D4B886] transition-colors duration-300 leading-snug">
+                            {hotel.name}
+                          </h3>
+                          <div className="flex items-center space-x-1 text-[#D4B886] font-bold text-xs bg-white/10 px-2 py-0.5 rounded-lg border border-white/15 shrink-0">
+                            <Star className="w-3.5 h-3.5 fill-[#D4B886]" />
+                            <span>{hotel.rating || 4.5}</span>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] text-slate-300 block font-medium">
+                          📍 {hotel.neighborhood}
+                        </span>
+
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {hotel.amenities.map((amenity, aIdx) => (
+                            <span 
+                              key={aIdx} 
+                              className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300 flex items-center space-x-1"
+                            >
+                              <Wifi className="w-2.5 h-2.5 text-[#D4B886]" />
+                              <span>{amenity}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                        <div>
+                          <span className="font-mono font-bold text-base text-[#D4B886] block">{hotel.pricePerNight}</span>
+                          <span className="text-[9px] text-slate-400 block uppercase tracking-wider">Per Night</span>
+                        </div>
+
+                        <a
+                          href={`https://www.google.com/travel/hotels?q=${encodeURIComponent('Hotels in ' + trip.destination + ' ' + hotel.name)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1"
+                        >
+                          <span>View Hotel</span>
+                          <ExternalLink className="w-3 h-3 text-[#D4B886]" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 rounded-3xl glass-panel-dark border border-white/10 text-center space-y-2">
+                  <Building2 className="w-8 h-8 text-slate-400 mx-auto opacity-50" />
+                  <p className="text-xs text-slate-300">
+                    Live hotel properties are retrieved directly from SerpApi Google Hotels for {trip.destination}.
+                  </p>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
