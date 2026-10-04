@@ -65,6 +65,20 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
   // Dynamic Theme Palette for currently displayed trip
   const activeTheme = getTripTheme(displayTrip?.destination, displayTrip?.country);
 
+  const getCleanSummary = (text?: string, destination?: string) => {
+    if (!text) return `${destination || 'Destination'} is blessed with pristine landscapes, luxury retreats, fine dining, and curated local immersion.`;
+    const clean = text
+      .replace(/^#+.*$/gm, '')
+      .replace(/[\*\-•#_~]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (clean.length > 220) {
+      return clean.substring(0, 215) + '...';
+    }
+    return clean || `${destination || 'Destination'} is blessed with pristine landscapes, luxury retreats, fine dining, and curated local immersion.`;
+  };
+
   // Button Scroll Handlers
   const handleScrollNext = () => {
     if (scrollContainerRef.current) {
@@ -287,7 +301,7 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
                 </div>
 
                 <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal opacity-90 max-w-md">
-                  {displayTrip?.description}
+                  {getCleanSummary(displayTrip?.description, displayTrip?.destination)}
                 </p>
 
                 {/* Explore CTA Button - Dynamic Theme Solid Luxury Button */}

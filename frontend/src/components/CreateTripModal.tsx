@@ -12,6 +12,7 @@ import {
   Minus
 } from 'lucide-react';
 import type { TripState, BudgetTier } from '../types';
+import { sendChatMessage } from '../services/api';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
     return 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1600&q=80';
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -73,7 +74,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
     setIsLoading(true);
 
-    const newTrip: TripState = {
+    const initialTrip: TripState = {
       id: `trip_${Date.now()}`,
       origin,
       destination,
@@ -89,11 +90,25 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
       isBookmarked: true
     };
 
-    setTimeout(() => {
+    try {
+      const messageText = `Create an itinerary from ${origin} to ${destination} from ${startDate} to ${endDate} for ${guestCount} travelers with ${budget} budget.`;
+      const { response } = await sendChatMessage(messageText, initialTrip, true);
+      
+      const newTrip: TripState = {
+        ...initialTrip,
+        description: response.reply || initialTrip.description,
+        session_id: response.session_id || initialTrip.session_id,
+      };
+
       setIsLoading(false);
       onCreateTrip(newTrip);
       onClose();
-    }, 500);
+    } catch (err) {
+      // Fallback in case of offline/network issues
+      setIsLoading(false);
+      onCreateTrip(initialTrip);
+      onClose();
+    }
   };
 
   return (

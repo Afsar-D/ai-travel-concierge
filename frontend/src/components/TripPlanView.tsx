@@ -4,7 +4,6 @@ import {
   Sun, 
   CloudRain, 
   MapPin, 
-  Clock, 
   DollarSign, 
   ExternalLink, 
   ShieldCheck, 
@@ -49,8 +48,16 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
     let total = 0;
     days.forEach(day => {
       day.activities.forEach(act => {
-        const costNum = parseInt(act.estimatedCost.replace(/[^0-9]/g, '')) || 0;
-        total += costNum;
+        const numbers = act.estimatedCost.match(/\d[\d,]*/g);
+        if (numbers && numbers.length > 0) {
+          const parsedNums = numbers.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n));
+          if (parsedNums.length === 1) {
+            total += parsedNums[0];
+          } else if (parsedNums.length >= 2) {
+            const avg = Math.round((parsedNums[0] + parsedNums[1]) / 2);
+            total += avg;
+          }
+        }
       });
     });
     return total;
@@ -214,38 +221,38 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#D4B886] shrink-0 font-mono font-bold text-xs">
-                            <Clock className="w-4 h-4" />
+                          <div className="w-10 h-10 rounded-2xl bg-[#D4B886]/15 border border-[#D4B886]/30 flex items-center justify-center text-[#D4B886] shrink-0 font-bold text-xs shadow-md">
+                            <MapPin className="w-5 h-5 text-[#D4B886]" />
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs font-bold text-[#D4B886] font-mono">{act.time}</span>
                               <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-semibold ${getCategoryBadgeClass(act.category)}`}>
                                 {act.category}
                               </span>
                               {act.isIndoor && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">
-                                  🛡️ Weather Safe
+                                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">
+                                  🛡️ Weather Safe Indoor Spot
                                 </span>
                               )}
                             </div>
 
-                            <h4 className="font-bold text-base text-white group-hover:text-[#D4B886] transition-colors duration-300">
+                            <h4 className="font-bold text-lg text-white group-hover:text-[#D4B886] transition-colors duration-300 leading-snug">
                               {act.title}
                             </h4>
 
-                            <p className="text-xs text-slate-300 leading-relaxed">
+                            <p className="text-xs text-slate-300 leading-relaxed pt-0.5">
                               {act.description}
                             </p>
 
-                            <div className="flex items-center space-x-4 text-xs text-slate-400 font-medium pt-1">
-                              <span className="flex items-center space-x-1">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{act.location}</span>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium pt-2">
+                              <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10">
+                                <MapPin className="w-3.5 h-3.5 text-[#D4B886]" />
+                                <span className="text-white font-medium">{act.location}</span>
                               </span>
-                              <span className="flex items-center space-x-1">
+
+                              <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-[#D4B886]/15 border border-[#D4B886]/30 text-[#D4B886] font-mono font-bold">
                                 <DollarSign className="w-3.5 h-3.5 text-[#D4B886]" />
-                                <span>Est. {act.estimatedCost}</span>
+                                <span>Budget: {act.estimatedCost}</span>
                               </span>
                             </div>
                           </div>
@@ -256,7 +263,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                           target="_blank"
                           rel="noreferrer"
                           className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition-colors duration-300 shrink-0 border border-white/10"
-                          title="View on Google Maps"
+                          title="Explore Place on Google Maps"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>

@@ -3,6 +3,8 @@ import { X, Send, User, Sparkles, Compass, ShieldCheck } from 'lucide-react';
 import type { ChatMessage, TripState } from '../types';
 import { sendChatMessage } from '../services/api';
 
+import { MarkdownView } from './MarkdownView';
+
 interface ConciergeChatModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,17 +16,33 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   onClose,
   trip
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'init_1',
-      sender: 'assistant',
-      content: `Greetings! I am your ODYSSEY Executive Concierge for ${trip ? trip.destination : 'your journey'}. How may I assist you with fine dining, weather forecasts, private transit, or itinerary adjustments?`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({});
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const currentTripId = trip ? trip.id : 'default';
+
+  const getInitialMessages = (dest?: string): ChatMessage[] => [
+    {
+      id: `init_${dest || 'gen'}`,
+      sender: 'assistant',
+      content: `Greetings! I am your ODYSSEY Executive Concierge for ${dest || 'your journey'}. How may I assist you with fine dining, weather forecasts, private transit, or itinerary adjustments?`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ];
+
+  const messages = chatHistories[currentTripId] || getInitialMessages(trip?.destination);
+
+  const addMessageToCurrentTrip = (msg: ChatMessage) => {
+    setChatHistories(prev => {
+      const existing = prev[currentTripId] || getInitialMessages(trip?.destination);
+      return {
+        ...prev,
+        [currentTripId]: [...existing, msg]
+      };
+    });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,11 +64,15 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    addMessageToCurrentTrip(userMsg);
     setIsLoading(true);
 
     try {
       const { response } = await sendChatMessage(userText, trip);
+
+      if (response.session_id && trip) {
+        trip.session_id = response.session_id;
+      }
 
       const botMsg: ChatMessage = {
         id: `bot_${Date.now()}`,
@@ -60,7 +82,7 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         status: 'success'
       };
 
-      setMessages(prev => [...prev, botMsg]);
+      addMessageToCurrentTrip(botMsg);
     } catch (err) {
       const errorMsg: ChatMessage = {
         id: `bot_err_${Date.now()}`,
@@ -69,7 +91,7 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'success'
       };
-      setMessages(prev => [...prev, errorMsg]);
+      addMessageToCurrentTrip(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +186,11 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
                   <span>{msg.sender === 'user' ? 'You' : 'Concierge'}</span>
                   <span>{msg.timestamp}</span>
                 </div>
-                <div className="whitespace-pre-line">{msg.content}</div>
+                {msg.sender === 'assistant' ? (
+                  <MarkdownView content={msg.content} />
+                ) : (
+                  <div className="whitespace-pre-line">{msg.content}</div>
+                )}
               </div>
             </div>
           ))}
