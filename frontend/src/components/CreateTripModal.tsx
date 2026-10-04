@@ -14,6 +14,7 @@ import {
 import type { TripState, BudgetTier } from '../types';
 import { sendChatMessage } from '../services/api';
 import { parseMarkdownToItinerary } from '../utils/itineraryParser';
+import { getDestinationBackgroundImage } from '../utils/themeUtils';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -46,15 +47,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
   const nightsCount = calculateNights();
 
-  const getBgImage = (dest: string) => {
-    const d = dest.toLowerCase();
-    if (d.includes('indonesia') || d.includes('bali')) return 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80';
-    if (d.includes('thailand')) return 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80';
-    if (d.includes('kerala') || d.includes('india')) return 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=1600&q=80';
-    if (d.includes('paris') || d.includes('france')) return 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80';
-    if (d.includes('tokyo') || d.includes('japan')) return 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1600&q=80';
-    return 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1600&q=80';
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +74,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
       destination,
       country: destination,
       description: `${destination} is blessed with pristine landscapes, luxury retreats, fine dining, and curated local immersion.`,
-      bgImage: getBgImage(destination),
+      bgImage: getDestinationBackgroundImage(destination),
       start_date: startDate,
       end_date: endDate,
       budget,
