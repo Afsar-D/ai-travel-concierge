@@ -3,6 +3,7 @@ import { X, Send, User, Sparkles, Compass, ShieldCheck } from 'lucide-react';
 import type { ChatMessage, TripState, ItineraryDay } from '../types';
 import { sendChatMessage } from '../services/api';
 import { parseMarkdownToItinerary } from '../utils/itineraryParser';
+import { parseBackendReply } from '../utils/parser';
 
 import { MarkdownView } from './MarkdownView';
 
@@ -19,7 +20,15 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   trip,
   onUpdateItinerary
 }) => {
-  const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({});
+  const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>(() => {
+    try {
+      const stored = localStorage.getItem('odyssey_chat_histories');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -40,10 +49,14 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   const addMessageToCurrentTrip = (msg: ChatMessage) => {
     setChatHistories(prev => {
       const existing = prev[currentTripId] || getInitialMessages(trip?.destination);
-      return {
+      const updated = {
         ...prev,
         [currentTripId]: [...existing, msg]
       };
+      try {
+        localStorage.setItem('odyssey_chat_histories', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
     });
   };
 
@@ -78,14 +91,27 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
       }
 
       if (response.reply && trip) {
-        const parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date);
-        if (parsedDays.length > 0 && onUpdateItinerary) {
+        const parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date, trip.budget);
+        const parsedData = parseBackendReply(response.reply, trip.origin, trip.destination);
+
+        if (parsedDays.length > 0 || parsedData.flights.length > 0 || parsedData.hotels.length > 0) {
+          const combinedDescription = (parsedData.flights.length > 0 || parsedData.hotels.length > 0)
+            ? `${trip.description}\n\n${response.reply}`
+            : response.reply;
+
           const updatedTrip: TripState = {
             ...trip,
-            description: response.reply,
+            description: combinedDescription,
             session_id: response.session_id || trip.session_id
           };
-          onUpdateItinerary(updatedTrip, parsedDays);
+
+          const daysToUse = parsedDays.length > 0
+            ? parsedDays
+            : parseMarkdownToItinerary(combinedDescription, trip.destination, trip.start_date, trip.budget);
+
+          if (onUpdateItinerary) {
+            onUpdateItinerary(updatedTrip, daysToUse);
+          }
         }
       }
 

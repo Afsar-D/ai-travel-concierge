@@ -33,8 +33,9 @@ session_factory = async_sessionmaker(
 
 
 async def init_db():
-    async with engine.begin() as connect:
+    async with engine.connect() as connect:
         await connect.run_sync(SQLModel.metadata.create_all)
+        await connect.commit()
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

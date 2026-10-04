@@ -39,3 +39,30 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
+
+
+class FlightBooking(SQLModel, table=True):
+    __tablename__ = "flight_booking"  # pyright: ignore[reportAssignmentType]
+    id: int | None = Field(default=None, primary_key=True)
+    session_id: str = Field(default=None, foreign_key="chat_session.id")
+    airline: str
+    flight_number: str
+    departure_time: str
+    arrival_time: str
+    duration: str
+    price: str
+    stops: str
+    departure_airport: str
+    arrival_airport: str
+
+
+class HotelBooking(SQLModel, table=True):
+    __tablename__ = "hotel_booking"  # pyright: ignore[reportAssignmentType]
+    id: int | None = Field(default=None, primary_key=True)
+    session_id: str = Field(default=None, foreign_key="chat_session.id")
+    name: str
+    rating: float = Field(default=4.5)
+    price_per_night: str | None = None
+    amenities: str | None = Field(default="")
+    neighbourhood: str
+    badge: str

@@ -47,26 +47,67 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   // Parse Live Backend Flight & Hotel Data
   const parsedData = parseBackendReply(trip.description || '', trip.origin, trip.destination);
 
-  const calculateTotalCost = () => {
-    let total = 0;
+  const calculateBudgetBreakdown = () => {
+    let activityTotal = 0;
     days.forEach(day => {
       day.activities.forEach(act => {
         const numbers = act.estimatedCost.match(/\d[\d,]*/g);
         if (numbers && numbers.length > 0) {
           const parsedNums = numbers.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n));
           if (parsedNums.length === 1) {
-            total += parsedNums[0];
+            activityTotal += parsedNums[0];
           } else if (parsedNums.length >= 2) {
             const avg = Math.round((parsedNums[0] + parsedNums[1]) / 2);
-            total += avg;
+            activityTotal += avg;
           }
         }
       });
     });
-    return total;
+
+    const daysCount = Math.max(1, days.length);
+    const estimatedDailySpend = Math.round(activityTotal / daysCount);
+    const nightsCount = days.length > 1 ? days.length - 1 : 1;
+
+    let hotelRatePerNight = 0;
+    if (parsedData.hotels && parsedData.hotels.length > 0) {
+      let sumRates = 0;
+      let count = 0;
+      parsedData.hotels.forEach(h => {
+        const numbers = h.pricePerNight.match(/\d[\d,]*/g);
+        if (numbers && numbers.length > 0) {
+          const val = parseInt(numbers[0].replace(/,/g, ''), 10);
+          if (!isNaN(val) && val > 0) {
+            sumRates += val;
+            count++;
+          }
+        }
+      });
+      if (count > 0) {
+        hotelRatePerNight = Math.round(sumRates / count);
+      }
+    }
+
+    if (hotelRatePerNight === 0) {
+      if (trip.budget === 'low') hotelRatePerNight = 1500;
+      else if (trip.budget === 'high') hotelRatePerNight = 9500;
+      else hotelRatePerNight = 3800;
+    }
+
+    const accommodationTotal = hotelRatePerNight * nightsCount;
+    const grandTotal = activityTotal + accommodationTotal;
+
+    return {
+      activityTotal,
+      estimatedDailySpend,
+      daysCount,
+      nightsCount,
+      hotelRatePerNight,
+      accommodationTotal,
+      grandTotal
+    };
   };
 
-  const totalCost = calculateTotalCost();
+  const budgetMetrics = calculateBudgetBreakdown();
 
   // Neutral Translucent Glass Badges
   const getCategoryBadgeClass = (category: Activity['category']) => {
@@ -301,15 +342,44 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-400">Total Activity & Dining Est.</span>
-                      <span className="text-white font-mono font-bold text-base">₹{totalCost.toLocaleString('en-IN')} INR</span>
+                  <div className="space-y-3">
+                    {/* Est. Daily Budget */}
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400 font-medium">Est. Daily Budget (Food & Activities)</span>
+                      <span className="text-[#D4B886] font-mono font-bold text-sm">
+                        ₹{budgetMetrics.estimatedDailySpend.toLocaleString('en-IN')}/day
+                      </span>
                     </div>
+
+                    {/* Breakdown Subtotals */}
+                    <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Activities & Dining ({budgetMetrics.daysCount} Days)</span>
+                        <span className="text-white font-mono font-semibold">
+                          ₹{budgetMetrics.activityTotal.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Accommodation ({budgetMetrics.nightsCount} Nights @ ₹{budgetMetrics.hotelRatePerNight.toLocaleString('en-IN')})</span>
+                        <span className="text-white font-mono font-semibold">
+                          ₹{budgetMetrics.accommodationTotal.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Total Budget */}
+                    <div className="flex justify-between items-center text-xs pt-1">
+                      <span className="text-slate-200 font-bold uppercase tracking-wider">Total Estimated Budget</span>
+                      <span className="text-white font-mono font-extrabold text-base text-[#D4B886]">
+                        ₹{budgetMetrics.grandTotal.toLocaleString('en-IN')} INR
+                      </span>
+                    </div>
+
+                    {/* Budget progress bar */}
                     <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-white/40 to-[#D4B886] transition-all duration-500"
-                        style={{ width: `${Math.min(100, (totalCost / 1200) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (budgetMetrics.grandTotal / (trip.budget === 'high' ? 75000 : trip.budget === 'medium' ? 35000 : 15000)) * 100)}%` }}
                       />
                     </div>
                   </div>
@@ -317,10 +387,10 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-[11px] text-slate-300 space-y-1">
                     <div className="flex items-center space-x-1.5 font-semibold text-white">
                       <ShieldCheck className="w-4 h-4 text-[#D4B886]" />
-                      <span>AI Weather Adaptation</span>
+                      <span>Budget Breakdown Guide</span>
                     </div>
                     <p className="text-slate-400 text-[11px] leading-relaxed">
-                      Synced live with Open-Meteo geocoding APIs.
+                      Food, dining & activity entry costs are included in the daily estimated budget. Accommodation is calculated per night based on selected hotels.
                     </p>
                   </div>
                 </div>

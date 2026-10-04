@@ -45,6 +45,51 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content }) => {
           return <hr key={bIdx} className="border-white/10 my-2" />;
         }
 
+        // Markdown Table
+        if (trimmed.startsWith('|') && trimmed.includes('|')) {
+          const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
+          const headerLine = lines[0];
+          const dataLines = lines.slice(1).filter(l => !l.match(/^\|[\s:\-|\+]+\|$/));
+
+          if (headerLine && dataLines.length > 0) {
+            const headers = headerLine.split('|').map(c => c.trim()).filter(Boolean);
+
+            return (
+              <div key={bIdx} className="my-3 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-lg">
+                <table className="w-full text-left border-collapse text-[11px]">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/10 text-white font-bold">
+                      {headers.map((h, hIdx) => (
+                        <th key={hIdx} className="p-3 font-bold uppercase tracking-wider text-[#D4B886]">
+                          {renderInlineMarkdown(h)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {dataLines.map((rowStr, rIdx) => {
+                      const cells = rowStr.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+                      return (
+                        <tr key={rIdx} className="hover:bg-white/5 transition-colors">
+                          {cells.map((cell, cIdx) => (
+                            <td key={cIdx} className="p-3 text-slate-200 align-top leading-relaxed">
+                              {cell.split(/<br\s*\/?>/i).map((subItem, sIdx) => (
+                                <div key={sIdx} className="py-0.5">
+                                  {renderInlineMarkdown(subItem.trim())}
+                                </div>
+                              ))}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          }
+        }
+
         // Bullet Lists
         if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
           const listItems = trimmed.split('\n').filter(Boolean);

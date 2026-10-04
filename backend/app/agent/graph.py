@@ -34,38 +34,38 @@ async def generate_iternerary(state: AgentState) -> dict:
                 f"Error: City '{destination}' could not be found. Please Check spelling or enter a valid city."
             ]
         }
-    prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and memorable travel itinerary based on the user's specific trip context, budget tier, and live weather forecast.
-    ### Trip Context:
+    prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and highly engaging travel itinerary based on the user's trip context, budget tier, and live weather forecast.### Trip Context:
     - Origin City: {origin}
     - Destination City: {destination}
     - Number of Travelers: {guests} person(s)
-    - Budget Level: {budget} 
-    - Travel dates: {start_date} to {end_date}
-    ({total_days} Days total)
-    (Note: Low = budget stays, public transit, free attractions; Medium = balanced dining, popular sights; High = luxury stays, private tours, fine dining)
+    - Budget Tier: {budget}
+    - Travel Dates: {start_date} to {end_date} ({total_days} Days total)
     - Real-Time Weather Forecast:
     {weather}
-    - Real-Time Flight Recommendations:
+    - Real-Time Flight Options:
     {flights}
-    - Real-Time Hotel Recommendations:
+    - Real-Time Hotel Options:
     {hotels}
+
     ### User's Specific Request / Message:
     {message}
-    ### Instructions for Response Generation:
-    1. **Weather Alignment**: Adapt daily activities directly to the forecast above. Schedule indoor activities (museums, art galleries, covered markets) on rainy/cloudy days, and outdoor sightseeing or walking tours on clear/sunny days.
-    2. **Budget & Group Sizing**: Tailor all activity recommendations, dining spots, and accommodation tips strictly to the requested "{budget}" tier for {guests} guest(s).
-    3. **Travel & Transit Tips**: Include practical ground travel advice for moving between {origin} and {destination}.
-    4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
-    5. Complete Duration Coverage: You MUST generate an explicit day-by-day section for ALL {total_days} days (from Day 1 up to Day {total_days}).
-    Provide an engaging, inspiring, and well-structured response.
-    Flight Information Integration Rules:
-    1. Examine the provided `flight_options` in the state.
-    2. If valid flight data is present:
-    - Highlight 2-3 top flight options including airline name, flight numbers, departure/arrival times, total duration, and ticket price in INR.
-    - Advise the traveler on optimal departure times relative to their Day 1 itinerary activities.
-    3. If `flight_options` is empty or indicates "Cities Not found":
-    - State clearly that real-time flight rates could not be resolved for the requested dates/cities.
-    - Provide standard estimated flight durations and general airport travel advice for the destination instead."""
+
+    ### CRITICAL FORMATTING & STRUCTURE RULES (STRICT COMPLIANCE):
+    1. **Day Headings**: You MUST generate an explicit section for ALL {total_days} days (from Day 1 up to Day {total_days}). Use exact heading format: `## Day X` (e.g. `## Day 1`, `## Day 2`).
+    2. **Activity Bullet Format**: Every activity item MUST be a bullet point formatted exactly as:
+    `* **[Place Name or Activity Title]**: Detailed description of the activity and experience.`
+    Do NOT prefix titles with `Morning/Afternoon:`, `Date:`, `Weather:`, or `Theme:`.
+    3. **NO Markdown Tables**: Do NOT use Markdown tables (e.g. `| Header | Header |`) for day-by-day itineraries. Use bullet points only.
+    4. **NO Summary Bullets**: Do NOT add extra metadata bullet points for dates, weather summaries, or daily budget totals under day headers.
+
+    ### CONTENT & INTEGRATION RULES:
+    1. **Weather Adaptation**: Schedule indoor activities (museums, art galleries, covered markets, cafes) on rainy or overcast days, and outdoor sightseeing (beaches, forts, walking tours) on clear or sunny days.
+    2. **Budget Alignment**: Tailor activity selections, dining recommendations, and accommodation tips strictly to the "{budget}" tier for {guests} traveler(s).
+    3. **Flight Handling**: 
+    - If valid flight data is present in `flight_options` OR if the user explicitly asked about flights in their message, include a concise flight recommendation section.
+    - Otherwise, do NOT generate a flight section or fallback flight message when the user is asking about activities, dining, or weather.
+    4. **User Request Focus**: If the user's message asks a specific question (e.g., "Weather and indoor plans"), address that request directly while preserving the clean bullet itinerary structure.
+    """
 
     response = await client.aio.models.generate_content(
         model="gemini-3.5-flash-lite",
@@ -81,9 +81,13 @@ async def continuous_chat_stream(history: list):
     formatted_list = []
     for chat in history:
         if chat["sender"] == "user":
-            formatted_list.append({"role": "user", "parts": [chat["content"]]})
+            formatted_list.append(
+                {"role": "user", "parts": [{"text": chat["content"]}]}
+            )
         else:
-            formatted_list.append({"role": "model", "parts": [chat["content"]]})
+            formatted_list.append(
+                {"role": "model", "parts": [{"text": chat["content"]}]}
+            )
     return formatted_list
 
 

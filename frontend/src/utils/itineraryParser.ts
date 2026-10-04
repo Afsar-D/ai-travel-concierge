@@ -49,44 +49,43 @@ function getRealisticEstimatedCost(
     return `$${usdMatch[1]}`;
   }
 
-  // 4. Category & Budget-tier pricing matrix with index-based variation
-  const v = (index % 3) * 250;
+  const v = (index % 3) * 50;
 
   if (budgetTier === 'low') {
     switch (category) {
       case 'Dining':
-        return `₹${350 + v} – ₹${650 + v}`;
+        return `₹${200 + v} – ₹${400 + v}`;
       case 'Outdoor':
-        return index % 2 === 0 ? 'Free Entry' : `₹${150 + v} – ₹350`;
+        return index % 2 === 0 ? 'Free Entry' : `₹50 – ₹${150 + v}`;
       case 'Transit':
-        return `₹100 – ₹${300 + v}`;
+        return `₹50 – ₹${150 + v}`;
       case 'Culture':
-        return `₹200 + v – ₹${500 + v}`;
+        return `₹${100 + v} – ₹${300 + v}`;
     }
   } else if (budgetTier === 'high') {
     switch (category) {
       case 'Dining':
-        return `₹${3500 + v * 4} – ₹${7500 + v * 4}`;
+        return `₹${1800 + v * 4} – ₹${4200 + v * 4}`;
       case 'Outdoor':
-        return `₹1500 + v * 2 – ₹${3500 + v * 2}`;
+        return `₹${800 + v * 2} – ₹${2000 + v * 2}`;
       case 'Transit':
-        return `₹1800 + v * 2 – ₹${4000 + v * 2}`;
+        return `₹${1000 + v * 2} – ₹${2400 + v * 2}`;
       case 'Culture':
-        return `₹2500 + v * 3 – ₹${6000 + v * 3}`;
+        return `₹${1500 + v * 3} – ₹${3500 + v * 3}`;
     }
   }
 
   // Medium / Signature Tier
   switch (category) {
     case 'Dining':
-      return `₹${1200 + v} – ₹${2400 + v}`;
+      return `₹${450 + v * 2} – ₹${1100 + v * 2}`;
     case 'Outdoor':
-      return index % 2 === 0 ? 'Free Entry' : `₹450 + v – ₹1050`;
+      return index % 2 === 0 ? 'Free Entry' : `₹${150 + v} – ₹${450 + v}`;
     case 'Transit':
-      return `₹600 + v – ₹1250`;
+      return `₹${150 + v} – ₹${400 + v}`;
     case 'Culture':
     default:
-      return `₹900 + v – ₹1800`;
+      return `₹${250 + v} – ₹${750 + v}`;
   }
 }
 
@@ -152,6 +151,49 @@ export function parseMarkdownToItinerary(
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+
+      // Handle table rows (e.g., | 🌤️ Clear | • Beach walks | • Bakery visits |)
+      if (line.startsWith('|')) {
+        const lowerTable = line.toLowerCase();
+        if (lowerTable.includes('weather condition') || lowerTable.includes('best outdoor') || lowerTable.includes(':---')) {
+          continue; // Skip table header and separator rows
+        }
+
+        const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+        for (const cell of cells) {
+          const subItems = cell.split(/<br\s*\/?>|•|\*/).map(s => s.trim()).filter(Boolean);
+          for (const sub of subItems) {
+            if (sub.length < 5 || sub.toLowerCase().includes('clear') || sub.toLowerCase().includes('overcast') || sub.toLowerCase().includes('rain')) {
+              continue; // Skip weather condition status cells
+            }
+
+            const finalTitle = cleanActivityTitle(sub.split(/[,.:]/)[0]);
+            const description = sub.replace(/\*\*/g, '').trim();
+
+            let category: Activity['category'] = 'Culture';
+            const lowerSub = sub.toLowerCase();
+            if (lowerSub.includes('dine') || lowerSub.includes('lunch') || lowerSub.includes('food') || lowerSub.includes('bakery') || lowerSub.includes('cafe')) {
+              category = 'Dining';
+            } else if (lowerSub.includes('walk') || lowerSub.includes('beach') || lowerSub.includes('fort') || lowerSub.includes('park')) {
+              category = 'Outdoor';
+            }
+
+            const estimatedCost = getRealisticEstimatedCost(sub, category, budgetTier, activities.length);
+            activities.push({
+              id: `act_${dayNum}_tbl_${activities.length}`,
+              time: '',
+              title: finalTitle,
+              description: description,
+              category,
+              location: `${finalTitle}, ${destination}`,
+              estimatedCost,
+              isIndoor: lowerSub.includes('museum') || lowerSub.includes('indoor') || lowerSub.includes('bakery') || lowerSub.includes('cafe')
+            });
+          }
+        }
+        continue;
+      }
+
       if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
         let cleanContent = line.replace(/^[\*\-•\d\.\s]+/, '').trim();
         const lowerRaw = cleanContent.toLowerCase();

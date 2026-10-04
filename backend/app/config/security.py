@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
+import os
 from jose import jwt
 import bcrypt
 
-SECRET_KEY = "khul_ja_sim_sim"
+SECRET_KEY = str(os.getenv("JWT_SECRET_KEY"))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 

@@ -37,11 +37,13 @@ async def fetch_hotels(state: AgentState) -> dict[str, str]:
     end_date = state["end_date"]
     guests = state["guest_count"]
     currency = state.get("currency", "INR")
+    session_id = state.get('session_id',"")
     hotel_summary = await get_hotel_recommendations(
         destination=destination,
         start_date=start_date,
         end_date=end_date,
         currency=currency,
         guests=guests,
+        session_id=session_id
     )
     return {"hotel_options": hotel_summary}

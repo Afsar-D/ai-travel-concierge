@@ -36,18 +36,47 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
     return 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80';
   };
 
-  const calculateTotalCost = () => {
-    let total = 0;
+  const calculateBudgetBreakdown = () => {
+    let activityTotal = 0;
     days.forEach(day => {
       day.activities.forEach(act => {
-        const costNum = parseInt(act.estimatedCost.replace(/[^0-9]/g, '')) || 0;
-        total += costNum;
+        const numbers = act.estimatedCost.match(/\d[\d,]*/g);
+        if (numbers && numbers.length > 0) {
+          const parsedNums = numbers.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n));
+          if (parsedNums.length === 1) {
+            activityTotal += parsedNums[0];
+          } else if (parsedNums.length >= 2) {
+            const avg = Math.round((parsedNums[0] + parsedNums[1]) / 2);
+            activityTotal += avg;
+          }
+        }
       });
     });
-    return total;
+
+    const daysCount = Math.max(1, days.length);
+    const estimatedDailySpend = Math.round(activityTotal / daysCount);
+    const nightsCount = days.length > 1 ? days.length - 1 : 1;
+
+    let hotelRatePerNight = 0;
+    if (trip.budget === 'low') hotelRatePerNight = 1500;
+    else if (trip.budget === 'high') hotelRatePerNight = 9500;
+    else hotelRatePerNight = 3800;
+
+    const accommodationTotal = hotelRatePerNight * nightsCount;
+    const grandTotal = activityTotal + accommodationTotal;
+
+    return {
+      activityTotal,
+      estimatedDailySpend,
+      daysCount,
+      nightsCount,
+      hotelRatePerNight,
+      accommodationTotal,
+      grandTotal
+    };
   };
 
-  const totalCost = calculateTotalCost();
+  const budgetMetrics = calculateBudgetBreakdown();
 
   const getCategoryBadgeClass = (category: Activity['category']) => {
     switch (category) {
@@ -236,32 +265,55 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-500 dark:text-slate-400">Total Activity & Dining Est.</span>
-                <span className="text-slate-900 dark:text-slate-100 font-serif font-bold text-base">${totalCost} USD</span>
-              </div>
-              
-              <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B38E46] transition-all duration-500"
-                  style={{ width: `${Math.min(100, (totalCost / 1200) * 100)}%` }}
-                />
+            <div className="space-y-3">
+              {/* Est. Daily Budget */}
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Est. Daily Budget (Food & Activities)</span>
+                <span className="text-[#D4AF37] font-mono font-bold text-sm">
+                  ₹{budgetMetrics.estimatedDailySpend.toLocaleString('en-IN')}/day
+                </span>
               </div>
 
-              <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-400 pt-1">
-                <span>$0</span>
-                <span>Tier Cap: ${trip.budget === 'high' ? '3,500+' : trip.budget === 'medium' ? '1,500' : '750'}</span>
+              {/* Breakdown Subtotals */}
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Activities & Dining ({budgetMetrics.daysCount} Days)</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-mono font-semibold">
+                    ₹{budgetMetrics.activityTotal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Accommodation ({budgetMetrics.nightsCount} Nights @ ₹{budgetMetrics.hotelRatePerNight.toLocaleString('en-IN')})</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-mono font-semibold">
+                    ₹{budgetMetrics.accommodationTotal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Budget */}
+              <div className="flex justify-between items-center text-xs pt-1">
+                <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">Total Estimated Budget</span>
+                <span className="text-slate-900 dark:text-slate-100 font-mono font-extrabold text-base text-[#D4AF37]">
+                  ₹{budgetMetrics.grandTotal.toLocaleString('en-IN')} INR
+                </span>
+              </div>
+
+              {/* Budget progress bar */}
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B38E46] transition-all duration-500"
+                  style={{ width: `${Math.min(100, (budgetMetrics.grandTotal / (trip.budget === 'high' ? 75000 : trip.budget === 'medium' ? 35000 : 15000)) * 100)}%` }}
+                />
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5">
               <div className="flex items-center space-x-1.5 font-semibold text-slate-900 dark:text-slate-100">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>AI Weather Safety Guarantee</span>
+                <span>Budget Breakdown Guide</span>
               </div>
               <p className="leading-relaxed text-slate-500 dark:text-slate-400">
-                Activities automatically adjust based on live precipitation feeds from Open-Meteo geocoding services.
+                Food, dining & activity entry costs are included in the daily estimated budget. Accommodation is calculated per night based on selected tier rates.
               </p>
             </div>
           </div>

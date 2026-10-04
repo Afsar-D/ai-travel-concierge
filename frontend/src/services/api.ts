@@ -155,3 +155,17 @@ export async function sendChatMessage(
     return { response: data, latencyMs };
   }
 }
+
+export async function fetchSessionInventory(sessionId: string): Promise<{ flights: any[]; hotels: any[] }> {
+  try {
+    const res = await fetch(`/api/chat/session/${encodeURIComponent(sessionId)}/inventory`);
+    if (!res.ok) return { flights: [], hotels: [] };
+    const data = await res.json();
+    return {
+      flights: data.flights || [],
+      hotels: data.hotels || []
+    };
+  } catch (err) {
+    return { flights: [], hotels: [] };
+  }
+}
