@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { TripState, BudgetTier } from '../types';
 import { sendChatMessage } from '../services/api';
+import { parseMarkdownToItinerary } from '../utils/itineraryParser';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -94,6 +95,20 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
       const messageText = `Create an itinerary from ${origin} to ${destination} from ${startDate} to ${endDate} for ${guestCount} travelers with ${budget} budget.`;
       const { response } = await sendChatMessage(messageText, initialTrip, true);
       
+      const lowerReply = (response.reply || '').toLowerCase();
+      if (!response.reply || lowerReply.includes('error:') || lowerReply.includes('not found') || lowerReply.includes('could not be found') || lowerReply.includes('invalid city')) {
+        setIsLoading(false);
+        setError(response.reply || `Destination "${destination}" could not be found. Please check spelling or enter a valid city.`);
+        return;
+      }
+
+      const parsedDays = parseMarkdownToItinerary(response.reply, destination, startDate);
+      if (parsedDays.length === 0) {
+        setIsLoading(false);
+        setError(`Unable to generate plan for "${destination}". Please ensure the destination city name is correct.`);
+        return;
+      }
+
       const newTrip: TripState = {
         ...initialTrip,
         description: response.reply || initialTrip.description,
@@ -103,11 +118,9 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
       setIsLoading(false);
       onCreateTrip(newTrip);
       onClose();
-    } catch (err) {
-      // Fallback in case of offline/network issues
+    } catch (err: any) {
       setIsLoading(false);
-      onCreateTrip(initialTrip);
-      onClose();
+      setError(err.message || 'Failed to create journey. Please check backend connection.');
     }
   };
 

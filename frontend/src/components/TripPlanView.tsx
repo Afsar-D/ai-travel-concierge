@@ -12,7 +12,8 @@ import {
   Star,
   MessageSquare,
   Building2,
-  Wifi
+  Wifi,
+  Trash2
 } from 'lucide-react';
 import type { TripState, ItineraryDay, Activity } from '../types';
 import { getTripTheme } from '../utils/themeUtils';
@@ -24,6 +25,7 @@ interface TripPlanViewProps {
   onBack: () => void;
   onOpenConciergeChat: () => void;
   onOpenExport: () => void;
+  onDeleteTrip: (tripId: string) => void;
 }
 
 export const TripPlanView: React.FC<TripPlanViewProps> = ({
@@ -31,7 +33,8 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   days,
   onBack,
   onOpenConciergeChat,
-  onOpenExport
+  onOpenExport,
+  onDeleteTrip
 }) => {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inventory'>('itinerary');
@@ -143,6 +146,18 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
             title="Export iCal / PDF"
           >
             <Download className={`w-4 h-4 ${tripTheme.iconColor}`} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm(`Are you sure you want to delete the itinerary for ${trip.destination}?`)) {
+                onDeleteTrip(trip.id);
+              }
+            }}
+            className="p-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 transition-all duration-300 border border-rose-500/20 active:scale-95 hover:scale-105"
+            title="Delete Itinerary"
+          >
+            <Trash2 className="w-4 h-4 text-rose-400" />
           </button>
         </div>
 

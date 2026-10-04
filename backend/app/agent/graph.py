@@ -7,8 +7,7 @@ from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
-
-# from backend.app.database.session import init_db, get_session
+from datetime import datetime
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -24,16 +23,25 @@ async def generate_iternerary(state: AgentState) -> dict:
     flights = state.get("flight_options", "No Flights data available")
     hotels = state.get("hotel_options", "No hotels Options available")
     guests = state["guest_count"]
-    if any(
-        keyword in weather.lower() for keyword in ["error", "unavailable", "not found"]
-    ):
-        weather = f"Live weather unavailable for {destination}. Use typical seasonal weather defaults."
+    start_date = state["start_date"]
+    end_date = state["end_date"]
+    d1 = datetime.strptime(start_date, "%Y-%m-%d")
+    d2 = datetime.strptime(end_date, "%Y-%m-%d")
+    total_days = max(1, (d2 - d1).days + 1)
+    if "not found" in weather.lower() or "error 400" in weather.lower():
+        return {
+            "message": [
+                f"Error: City '{destination}' could not be found. Please Check spelling or enter a valid city."
+            ]
+        }
     prompt = f"""You are an expert AI Travel Concierge. Your goal is to craft a customized, realistic, and memorable travel itinerary based on the user's specific trip context, budget tier, and live weather forecast.
     ### Trip Context:
     - Origin City: {origin}
     - Destination City: {destination}
     - Number of Travelers: {guests} person(s)
     - Budget Level: {budget} 
+    - Travel dates: {start_date} to {end_date}
+    ({total_days} Days total)
     (Note: Low = budget stays, public transit, free attractions; Medium = balanced dining, popular sights; High = luxury stays, private tours, fine dining)
     - Real-Time Weather Forecast:
     {weather}
@@ -48,6 +56,7 @@ async def generate_iternerary(state: AgentState) -> dict:
     2. **Budget & Group Sizing**: Tailor all activity recommendations, dining spots, and accommodation tips strictly to the requested "{budget}" tier for {guests} guest(s).
     3. **Travel & Transit Tips**: Include practical ground travel advice for moving between {origin} and {destination}.
     4. **Structure & Formatting**: Present the final plan using clean Markdown headings, day-by-day bullet points, emoji icons, and estimated cost ranges.
+    5. Complete Duration Coverage: You MUST generate an explicit day-by-day section for ALL {total_days} days (from Day 1 up to Day {total_days}).
     Provide an engaging, inspiring, and well-structured response.
     Flight Information Integration Rules:
     1. Examine the provided `flight_options` in the state.
@@ -61,7 +70,7 @@ async def generate_iternerary(state: AgentState) -> dict:
     response = await client.aio.models.generate_content(
         model="gemini-3.5-flash-lite",
         contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=2500),
+        config=types.GenerateContentConfig(temperature=0.7, max_output_tokens=6000),
     )
     # async for chunk in response:
     #     yield chunk.text
@@ -106,7 +115,7 @@ workflow.add_node("flight_node", fetch_flights)
 workflow.add_node("hotel_node", fetch_hotels)
 
 workflow.add_edge(START, "weather_node")
-workflow.add_edge("weather_node","hotel_node")
+workflow.add_edge("weather_node", "hotel_node")
 workflow.add_conditional_edges("hotel_node", fetch_flights_decision)
 workflow.add_edge("flight_node", "llm_node")
 workflow.add_edge("llm_node", END)

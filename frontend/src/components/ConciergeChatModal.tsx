@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, User, Sparkles, Compass, ShieldCheck } from 'lucide-react';
-import type { ChatMessage, TripState } from '../types';
+import type { ChatMessage, TripState, ItineraryDay } from '../types';
 import { sendChatMessage } from '../services/api';
+import { parseMarkdownToItinerary } from '../utils/itineraryParser';
 
 import { MarkdownView } from './MarkdownView';
 
@@ -9,12 +10,14 @@ interface ConciergeChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   trip: TripState | null;
+  onUpdateItinerary?: (updatedTrip: TripState, updatedDays: ItineraryDay[]) => void;
 }
 
 export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   isOpen,
   onClose,
-  trip
+  trip,
+  onUpdateItinerary
 }) => {
   const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({});
   const [inputText, setInputText] = useState('');
@@ -72,6 +75,18 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
 
       if (response.session_id && trip) {
         trip.session_id = response.session_id;
+      }
+
+      if (response.reply && trip) {
+        const parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date);
+        if (parsedDays.length > 0 && onUpdateItinerary) {
+          const updatedTrip: TripState = {
+            ...trip,
+            description: response.reply,
+            session_id: response.session_id || trip.session_id
+          };
+          onUpdateItinerary(updatedTrip, parsedDays);
+        }
       }
 
       const botMsg: ChatMessage = {

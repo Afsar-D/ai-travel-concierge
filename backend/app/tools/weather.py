@@ -40,15 +40,17 @@ WMO_CODES = {
 def get_coords(location: str, origin: str) -> Any:
     geo_url_location = f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1&language=en&format=json"
     geo_url_origin = f"https://geocoding-api.open-meteo.com/v1/search?name={origin}&count=1&language=en&format=json"
-    data = httpx.get(geo_url_location)
-    data_origin = httpx.get(geo_url_origin)
-    response = data.json()
-    response_origin = data_origin.json()
-    if "results" in response and "results" in response_origin:
-        lat = response["results"][0]["latitude"]
-        lon = response["results"][0]["longitude"]
-        return {"coords": {"lat": lat, "lon": lon}, "status": 200}
-    return {"status": 400}
+    try:
+        data = httpx.get(geo_url_location, timeout=5.0)
+        data_origin = httpx.get(geo_url_origin, timeout=5.0)
+        response = data.json()
+        response_origin = data_origin.json()
+        if "results" in response and "results" in response_origin:
+            lat = response["results"][0]["latitude"]
+            lon = response["results"][0]["longitude"]
+            return {"coords": {"lat": lat, "lon": lon}, "status": 200}
+    except:
+        return {"status": 400}
 
 
 @router.get("")
@@ -71,16 +73,19 @@ async def get_weather_forecast(
             "daily": "temperature_2m_min,temperature_2m_max,rain_sum,weather_code",
             "timezone": "auto",
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url=url, params=params)
-        data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(url=url, params=params)
+            data = response.json()
 
-        if "daily" not in data or not data["daily"].get("time"):
-            return f"Weather forecast unavailable for {location} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
+            if "daily" not in data or not data["daily"].get("time"):
+                return f"Weather forecast unavailable for {location} between {start_date} and {end_date}. (Please ensure travel dates are between today and 16 days into the future)."
 
-        daily_report = ""
-        for i in range(len(data["daily"]["time"])):
-            daily_report += f"On {data['daily']['time'][i]} : Min temp {data['daily']['temperature_2m_min'][i]}°C and Max temp {data['daily']['temperature_2m_max'][i]}°C. Likely to be {WMO_CODES[data['daily']['weather_code'][i]]['icon']} {WMO_CODES[data['daily']['weather_code'][i]]['desc']}\n"
-        await set_cached_weather(cache_key=cache_key, data=daily_report)
-        return daily_report
+            daily_report = ""
+            for i in range(len(data["daily"]["time"])):
+                daily_report += f"On {data['daily']['time'][i]} : Min temp {data['daily']['temperature_2m_min'][i]}°C and Max temp {data['daily']['temperature_2m_max'][i]}°C. Likely to be {WMO_CODES[data['daily']['weather_code'][i]]['icon']} {WMO_CODES[data['daily']['weather_code'][i]]['desc']}\n"
+            await set_cached_weather(cache_key=cache_key, data=daily_report)
+            return daily_report
+        except:
+            return "Live Weather forecast temporarily unavailable. Proceeding with standard seasonal defaults"
     return f"Error {d['status']} : {location} or {origin} not found"

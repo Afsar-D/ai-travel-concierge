@@ -48,7 +48,7 @@ export function App() {
 
   const [itineraryDays, setItineraryDays] = useState<ItineraryDay[]>(() => {
     if (activeTrip && activeTrip.description) {
-      return parseMarkdownToItinerary(activeTrip.description, activeTrip.destination, activeTrip.start_date);
+      return parseMarkdownToItinerary(activeTrip.description, activeTrip.destination, activeTrip.start_date, activeTrip.budget);
     }
     return [];
   });
@@ -79,12 +79,12 @@ export function App() {
 
   const handleSelectTrip = (selected: TripState) => {
     setActiveTrip(selected);
-    setItineraryDays(parseMarkdownToItinerary(selected.description, selected.destination, selected.start_date));
+    setItineraryDays(parseMarkdownToItinerary(selected.description, selected.destination, selected.start_date, selected.budget));
   };
 
   const handleExploreTrip = (targetTrip: TripState) => {
     setActiveTrip(targetTrip);
-    setItineraryDays(parseMarkdownToItinerary(targetTrip.description, targetTrip.destination, targetTrip.start_date));
+    setItineraryDays(parseMarkdownToItinerary(targetTrip.description, targetTrip.destination, targetTrip.start_date, targetTrip.budget));
     setViewMode('planDetail');
   };
 
@@ -107,7 +107,7 @@ export function App() {
       return updated;
     });
     setActiveTrip(newTrip);
-    setItineraryDays(parseMarkdownToItinerary(newTrip.description, newTrip.destination, newTrip.start_date));
+    setItineraryDays(parseMarkdownToItinerary(newTrip.description, newTrip.destination, newTrip.start_date, newTrip.budget));
     setViewMode('planDetail');
 
     confetti({
@@ -115,6 +115,39 @@ export function App() {
       spread: 70,
       origin: { y: 0.8 },
       colors: ['#D4AF37', '#3B82F6', '#FFFFFF'],
+    });
+  };
+
+  const handleUpdateItinerary = (updatedTrip: TripState, updatedDays: ItineraryDay[]) => {
+    setActiveTrip(updatedTrip);
+    setItineraryDays(updatedDays);
+    setTrips(prev => {
+      const updated = prev.map(t => t.id === updatedTrip.id ? updatedTrip : t);
+      try {
+        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  const handleDeleteTrip = (tripId: string) => {
+    setTrips(prev => {
+      const updated = prev.filter(t => t.id !== tripId);
+      try {
+        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+      } catch (e) {}
+
+      if (activeTrip && activeTrip.id === tripId) {
+        const nextActive = updated.length > 0 ? updated[0] : null;
+        setActiveTrip(nextActive);
+        if (nextActive) {
+          setItineraryDays(parseMarkdownToItinerary(nextActive.description, nextActive.destination, nextActive.start_date, nextActive.budget));
+        } else {
+          setItineraryDays([]);
+        }
+        setViewMode('dashboard');
+      }
+      return updated;
     });
   };
 
@@ -136,6 +169,7 @@ export function App() {
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onLogout={handleLogout}
           onBookmarkTrip={handleBookmarkTrip}
+          onDeleteTrip={handleDeleteTrip}
         />
       ) : (
         <TripPlanView
@@ -144,6 +178,7 @@ export function App() {
           onBack={() => setViewMode('dashboard')}
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
+          onDeleteTrip={handleDeleteTrip}
         />
       )}
 
@@ -151,6 +186,7 @@ export function App() {
         isOpen={isConciergeOpen}
         onClose={() => setIsConciergeOpen(false)}
         trip={activeTrip}
+        onUpdateItinerary={handleUpdateItinerary}
       />
 
       <CreateTripModal

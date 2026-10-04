@@ -6,7 +6,6 @@ from typing import AsyncGenerator
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
-    AsyncSession,
     create_async_engine,
     async_sessionmaker,
 )

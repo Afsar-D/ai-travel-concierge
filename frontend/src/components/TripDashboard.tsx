@@ -10,7 +10,8 @@ import {
   MessageSquare,
   Sparkles,
   LogOut,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import type { TripState, UserProfile } from '../types';
 import { getTripTheme } from '../utils/themeUtils';
@@ -25,6 +26,7 @@ interface TripDashboardProps {
   onOpenConciergeChat: () => void;
   onLogout: () => void;
   onBookmarkTrip: (tripId: string) => void;
+  onDeleteTrip: (tripId: string) => void;
 }
 
 export const TripDashboard: React.FC<TripDashboardProps> = ({
@@ -36,7 +38,8 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
   onOpenCreateModal,
   onOpenConciergeChat,
   onLogout,
-  onBookmarkTrip
+  onBookmarkTrip,
+  onDeleteTrip
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -374,20 +377,37 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
                           </div>
                         ) : <div />}
 
-                        {/* Bookmark Icon Button Top Right */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onBookmarkTrip(tripItem.id);
-                          }}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 ${
-                            tripItem.isBookmarked
-                              ? 'bg-white/30 text-white border border-white/40 shadow-md'
-                              : 'bg-white/10 text-white hover:bg-white/30 border border-white/10'
-                          }`}
-                        >
-                          <Bookmark className="w-3.5 h-3.5 fill-current text-white" />
-                        </button>
+                        <div className="flex items-center space-x-1.5">
+                          {/* Delete Trip Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Are you sure you want to delete the itinerary for ${tripItem.destination}?`)) {
+                                onDeleteTrip(tripItem.id);
+                              }
+                            }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-rose-500/40 text-slate-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/50 backdrop-blur-md transition-all duration-300"
+                            title="Delete Itinerary"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-slate-300 hover:text-rose-300" />
+                          </button>
+
+                          {/* Bookmark Icon Button Top Right */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onBookmarkTrip(tripItem.id);
+                            }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 ${
+                              tripItem.isBookmarked
+                                ? 'bg-white/30 text-white border border-white/40 shadow-md'
+                                : 'bg-white/10 text-white hover:bg-white/30 border border-white/10'
+                            }`}
+                            title="Bookmark"
+                          >
+                            <Bookmark className="w-3.5 h-3.5 fill-current text-white" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Card Bottom Content */}

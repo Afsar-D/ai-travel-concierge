@@ -1,11 +1,14 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
+from pydantic import EmailStr
 
 
 class ChatSession(SQLModel, table=True):
-    __tablename__ = "chat_session" # pyright: ignore[reportAssignmentType]
+    __tablename__ = "chat_session"  # pyright: ignore[reportAssignmentType]
     id: str = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     origin: str
     destination: str
     start_date: str
@@ -16,10 +19,23 @@ class ChatSession(SQLModel, table=True):
 
 
 class ChatMessages(SQLModel, table=True):
-    __tablename__ = "chat_messages" # pyright: ignore[reportAssignmentType]
+    __tablename__ = "chat_messages"  # pyright: ignore[reportAssignmentType]
     id: int | None = Field(default=None, primary_key=True)
     session_id: str = Field(default=None, foreign_key="chat_session.id")
     sender: str
     content: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     session: ChatSession | None = Relationship(back_populates="messages")
+
+
+class User(SQLModel, table=True):
+    __tablename__ = "users"  # pyright: ignore[reportAssignmentType]
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    email: EmailStr = Field(unique=True, index=True)
+    hashed_password: str
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )

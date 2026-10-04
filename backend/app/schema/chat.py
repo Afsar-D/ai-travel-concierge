@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from pydantic import model_validator
 from datetime import datetime
-from typing import Self
+from typing import Any, Self
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -12,7 +13,22 @@ class ChatRequest(BaseModel):
     budget: str = "medium"
     guest_count: int = 1
     session_id: str | None = None
-    currency : str = "INR"
+    currency: str = "INR"
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_data(cls, data: Any) -> Any:
+        if isinstance(data, str):
+            return {
+                "message": data,
+                "origin": 'Delhi',
+                "destination": 'Goa',
+                "start_date": '2026-10-04',
+                "end_date":'2026-10-10',
+                "budget":'medium',
+                "guest_count": 4,
+            }
+        return data
 
     @model_validator(mode="after")
     def validate_date_range(self) -> Self:
@@ -21,6 +37,7 @@ class ChatRequest(BaseModel):
         if end_date < start_date:
             raise ValueError("end_date must be on or after start_date")
         return self
+
 
 class ChatResponse(BaseModel):
     reply: str

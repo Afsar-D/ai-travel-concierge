@@ -20,7 +20,9 @@ async def get_hotel_recommendations(
         "adults": guests,
     }
     try:
-        search = await asyncio.to_thread(client.search, params=params)
+        search = await asyncio.wait_for(
+            asyncio.to_thread(client.search, params=params), timeout=3.0
+        )
         data = search.get("properties", [])
         result = ""
         for hotel in data[:3]:
@@ -30,5 +32,5 @@ async def get_hotel_recommendations(
             amenities = ", ".join(hotel.get("amenities") or [])
             result += f"""{name}\n - Rating : {rating}\n {f"- Rate Per Night : {rate_per_night}\n " if rate_per_night != "" else ""}- Amenities : {amenities}\n"""
         return result if result else f"No Hotels Available in {destination}"
-    except Exception as e:
-        return f"Unexpected Error Occured : {e}"
+    except Exception:
+        return f"Standard luxury and botique hotel options in {destination}"

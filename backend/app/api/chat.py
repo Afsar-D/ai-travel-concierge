@@ -14,7 +14,16 @@ from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_st
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
 
 
-@router.post("",response_model=None)
+@router.post(
+    "",
+    response_model=ChatResponse,
+    responses={
+        200: {
+            "description": "Returns JSON ChatResponse for initial trips or text/event-stream for streaming chat.",
+            "content": {"application/json": {}, "text/event-stream": {}},
+        }
+    },
+)
 async def handle_chat(
     payload: ChatRequest, session: AsyncSession = Depends(get_session)
 ) -> ChatResponse | StreamingResponse:

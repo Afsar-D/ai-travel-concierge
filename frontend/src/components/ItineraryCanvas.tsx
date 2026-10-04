@@ -3,7 +3,6 @@ import {
   Sun, 
   CloudRain, 
   MapPin, 
-  Clock, 
   DollarSign, 
   ExternalLink,
   ShieldCheck,
@@ -178,11 +177,10 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start space-x-4">
                     <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-[#D4AF37] shrink-0 font-bold text-xs">
-                      <Clock className="w-4 h-4" />
+                      <MapPin className="w-4 h-4 text-[#D4AF37]" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 mb-1.5">
-                        <span className="text-xs font-bold text-[#D4AF37] font-mono">{act.time}</span>
                         <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-semibold ${getCategoryBadgeClass(act.category)}`}>
                           {act.category}
                         </span>

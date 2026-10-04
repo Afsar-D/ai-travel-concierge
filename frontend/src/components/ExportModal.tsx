@@ -26,7 +26,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     days.forEach(day => {
       md += `### Day ${day.dayNumber} — ${day.date} (${day.weather.temp}, ${day.weather.condition})\n`;
       day.activities.forEach(act => {
-        md += `- **${act.time}**: ${act.title} [${act.category}] — *${act.estimatedCost}*\n  ${act.description}\n`;
+        md += `- **${act.title}** [${act.category}] — *${act.estimatedCost}*\n  ${act.description}\n`;
       });
       md += `\n`;
     });

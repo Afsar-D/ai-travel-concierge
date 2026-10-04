@@ -1,15 +1,111 @@
-import type { ItineraryDay, Activity } from '../types';
+import type { ItineraryDay, Activity, BudgetTier } from '../types';
+
+function cleanActivityTitle(rawTitle: string): string {
+  if (!rawTitle) return 'Local Experience';
+
+  let cleaned = rawTitle
+    .replace(/^(?:Visit|Explore|Head to|Stroll through|Check into|Check-in at|Arrive at|Enjoy|Experience|Discover|Dine at|Sample|Take a|Relax at|Walk through|Tour|Have dinner at|Have lunch at|Stop by)\s+/i, '')
+    .trim();
+
+  if (cleaned.length > 0) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  cleaned = cleaned.replace(/\*/g, '').trim();
+
+  if (cleaned.length > 45) {
+    cleaned = cleaned.slice(0, 42).trim() + '...';
+  }
+
+  return cleaned || 'Local Experience';
+}
+
+function getRealisticEstimatedCost(
+  cleanContent: string,
+  category: Activity['category'],
+  budgetTier: BudgetTier = 'medium',
+  index: number = 0
+): string {
+  // 1. Check if AI text explicitly mentions Free
+  if (/\b(free|no charge|complimentary|free entry)\b/i.test(cleanContent)) {
+    return 'Free Entry';
+  }
+
+  // 2. Check if AI text explicitly mentions INR / ₹ cost
+  const inrMatch = cleanContent.match(/(?:₹|INR)\s*([\d,]+)(?:\s*[\-–—]\s*(?:₹|INR)?\s*([\d,]+))?/i);
+  if (inrMatch) {
+    if (inrMatch[2]) {
+      return `₹${inrMatch[1]} – ₹${inrMatch[2]}`;
+    }
+    return `₹${inrMatch[1]}`;
+  }
+
+  // 3. Check if AI text explicitly mentions USD / $ cost
+  const usdMatch = cleanContent.match(/\$\s*([\d,]+)(?:\s*[\-–—]\s*\$?\s*([\d,]+))?/i);
+  if (usdMatch) {
+    if (usdMatch[2]) {
+      return `$${usdMatch[1]} – $${usdMatch[2]}`;
+    }
+    return `$${usdMatch[1]}`;
+  }
+
+  // 4. Category & Budget-tier pricing matrix with index-based variation
+  const v = (index % 3) * 250;
+
+  if (budgetTier === 'low') {
+    switch (category) {
+      case 'Dining':
+        return `₹${350 + v} – ₹${650 + v}`;
+      case 'Outdoor':
+        return index % 2 === 0 ? 'Free Entry' : `₹${150 + v} – ₹350`;
+      case 'Transit':
+        return `₹100 – ₹${300 + v}`;
+      case 'Culture':
+        return `₹200 + v – ₹${500 + v}`;
+    }
+  } else if (budgetTier === 'high') {
+    switch (category) {
+      case 'Dining':
+        return `₹${3500 + v * 4} – ₹${7500 + v * 4}`;
+      case 'Outdoor':
+        return `₹1500 + v * 2 – ₹${3500 + v * 2}`;
+      case 'Transit':
+        return `₹1800 + v * 2 – ₹${4000 + v * 2}`;
+      case 'Culture':
+        return `₹2500 + v * 3 – ₹${6000 + v * 3}`;
+    }
+  }
+
+  // Medium / Signature Tier
+  switch (category) {
+    case 'Dining':
+      return `₹${1200 + v} – ₹${2400 + v}`;
+    case 'Outdoor':
+      return index % 2 === 0 ? 'Free Entry' : `₹450 + v – ₹1050`;
+    case 'Transit':
+      return `₹600 + v – ₹1250`;
+    case 'Culture':
+    default:
+      return `₹900 + v – ₹1800`;
+  }
+}
 
 export function parseMarkdownToItinerary(
   markdownText: string,
   destination: string,
-  startDateStr: string
+  startDateStr: string,
+  budgetTier: BudgetTier = 'medium'
 ): ItineraryDay[] {
   if (!markdownText || markdownText.trim().length === 0) {
-    return generateFallbackItinerary(destination, startDateStr);
+    return [];
   }
 
-  // Parse YYYY-MM-DD safely without UTC timezone shift
+  // Check if response indicates a location error from backend
+  const lowerText = markdownText.toLowerCase();
+  if (lowerText.includes('error:') || lowerText.includes('not found') || lowerText.includes('could not be found')) {
+    return [];
+  }
+
   let baseYear = new Date().getFullYear();
   let baseMonth = new Date().getMonth();
   let baseDay = new Date().getDate();
@@ -23,12 +119,11 @@ export function parseMarkdownToItinerary(
     }
   }
 
-  // Regex to match "Day X" or "# Day X" headers specifically
   const dayHeaderRegex = /(?:^|\n)(?:#{1,4}\s*)?Day\s+(\d+)[^\n]*/gi;
   const matches = [...markdownText.matchAll(dayHeaderRegex)];
 
   if (matches.length === 0) {
-    return generateFallbackItinerary(destination, startDateStr);
+    return [];
   }
 
   const days: ItineraryDay[] = [];
@@ -59,25 +154,37 @@ export function parseMarkdownToItinerary(
       const line = lines[i];
       if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
         let cleanContent = line.replace(/^[\*\-•\d\.\s]+/, '').trim();
-        
-        // Strip out time period prefixes like **Morning:**, **Afternoon:**, **Evening:**, **Night:**
-        cleanContent = cleanContent.replace(/^\*{0,2}\s*(?:Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast)\s*\*{0,2}\s*:\s*/i, '').trim();
+        const lowerRaw = cleanContent.toLowerCase();
 
-        if (!cleanContent) continue;
-
-        // Skip daily summary cost lines in activity list
-        if (cleanContent.toLowerCase().includes('estimated daily cost') || cleanContent.toLowerCase().includes('daily spend')) {
+        // Skip metadata / summary bullet lines that are not real activities
+        if (
+          lowerRaw.startsWith('date:') ||
+          lowerRaw.startsWith('weather:') ||
+          lowerRaw.startsWith('theme:') ||
+          lowerRaw.startsWith('overview:') ||
+          lowerRaw.startsWith('note:') ||
+          lowerRaw.startsWith('day ') ||
+          lowerRaw.includes('estimated daily cost') ||
+          lowerRaw.includes('daily spend') ||
+          lowerRaw.includes('total spend')
+        ) {
           continue;
         }
 
-        // 1. Extract Place Name Title from bold text or preposition match
+        // Cleanly strip time-of-day prefixes (e.g., Morning/Afternoon:, Morning:, Evening:)
+        cleanContent = cleanContent
+          .replace(/^\*{0,2}\s*(?:Early\s+|Late\s+)?(?:Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast)(?:[\/\-]\s*(?:Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast))?\s*\*{0,2}\s*:\s*/i, '')
+          .trim();
+
+        if (!cleanContent || cleanContent.length < 5) continue;
+
         let placeName = '';
         const boldMatch = cleanContent.match(/\*\*([^*]+)\*\*/);
         
         if (boldMatch && boldMatch[1]) {
           placeName = boldMatch[1].trim();
         } else {
-          const prepMatch = cleanContent.match(/(?:at the|at|visit|explore|in|to|head to|stroll through|check into)\s+([A-Z][A-Za-z0-9\s'’-]+)/);
+          const prepMatch = cleanContent.match(/(?:at the|at|visit|explore|in|to|head to|stroll through|check into|check-in at)\s+([A-Z][A-Za-z0-9\s'’-]+)/);
           if (prepMatch && prepMatch[1]) {
             const extracted = prepMatch[1].split(/(?:,|\.|\s+and\s+|\s+or\s+|\s+for\s+)/)[0].trim();
             if (extracted.length > 3 && extracted.length < 40) {
@@ -88,24 +195,30 @@ export function parseMarkdownToItinerary(
 
         if (!placeName || placeName.length < 3) {
           if (cleanContent.includes(':')) {
-            placeName = cleanContent.split(':')[0].trim();
-          } else if (cleanContent.includes(' - ')) {
+            const beforeColon = cleanContent.split(':')[0].trim();
+            if (!/^(?:Date|Weather|Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast)$/i.test(beforeColon)) {
+              placeName = beforeColon;
+            }
+          }
+          if (!placeName && cleanContent.includes(' - ')) {
             placeName = cleanContent.split(' - ')[0].trim();
-          } else {
+          }
+          if (!placeName) {
             const firstClause = cleanContent.split(/[,.]/)[0].trim();
             placeName = firstClause.length <= 35 ? firstClause : firstClause.split(' ').slice(0, 4).join(' ');
           }
         }
 
-        placeName = placeName.replace(/\*/g, '').trim();
+        let finalTitle = cleanActivityTitle(placeName);
+        if (/^(?:Date|Weather|Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast|Morning\/Afternoon)$/i.test(finalTitle)) {
+          finalTitle = 'Local Experience';
+        }
 
-        // 2. Full Activity Description
         const description = cleanContent.replace(/\*\*/g, '').trim();
 
-        // 3. Clean Location Capsule
         let locationCapsule = `${destination}`;
-        if (placeName && !placeName.toLowerCase().startsWith('spend') && !placeName.toLowerCase().startsWith('enjoy') && !placeName.toLowerCase().startsWith('head') && !placeName.toLowerCase().startsWith('arrive')) {
-          locationCapsule = `${placeName}, ${destination}`;
+        if (finalTitle && !finalTitle.toLowerCase().startsWith('spend') && !finalTitle.toLowerCase().startsWith('enjoy') && !finalTitle.toLowerCase().startsWith('head') && !finalTitle.toLowerCase().startsWith('arrive')) {
+          locationCapsule = `${finalTitle}, ${destination}`;
         } else {
           locationCapsule = `Central ${destination}`;
         }
@@ -128,12 +241,12 @@ export function parseMarkdownToItinerary(
                          lowerDesc.includes('spa') ||
                          lowerDesc.includes('opera');
 
-        const estimatedCost = category === 'Dining' ? '₹1,500 – ₹2,500' : category === 'Transit' ? '₹800 – ₹1,500' : category === 'Outdoor' ? '₹500 – ₹1,200' : '₹1,000 – ₹2,000';
+        const estimatedCost = getRealisticEstimatedCost(cleanContent, category, budgetTier, i);
 
         activities.push({
           id: `act_${dayNum}_${i}`,
           time: '',
-          title: placeName,
+          title: finalTitle,
           description: description,
           category,
           location: locationCapsule,
@@ -153,141 +266,9 @@ export function parseMarkdownToItinerary(
     }
   }
 
-  return days.length > 0 ? days : generateFallbackItinerary(destination, startDateStr);
+  return days;
 }
 
-export function generateFallbackItinerary(destination: string, startDateStr: string): ItineraryDay[] {
-  const dest = destination || 'Paris';
-  let baseYear = new Date().getFullYear();
-  let baseMonth = new Date().getMonth();
-  let baseDay = new Date().getDate();
-
-  if (startDateStr && startDateStr.includes('-')) {
-    const parts = startDateStr.split('-').map(Number);
-    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-      baseYear = parts[0];
-      baseMonth = parts[1] - 1;
-      baseDay = parts[2];
-    }
-  }
-
-  const d1 = new Date(baseYear, baseMonth, baseDay);
-  const d2 = new Date(baseYear, baseMonth, baseDay + 1);
-  const d3 = new Date(baseYear, baseMonth, baseDay + 2);
-
-  const days: ItineraryDay[] = [
-    {
-      dayNumber: 1,
-      date: d1.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
-      weather: { temp: '21°C / 70°F', condition: 'Clear Skies', icon: '☀️', isRainy: false },
-      activities: [
-        {
-          id: 'act_1_1',
-          time: '',
-          title: `Chauffeur Arrival & Residence Check-in`,
-          description: `Luxury private transfer from arrival terminal directly to your residence in ${dest}.`,
-          category: 'Transit',
-          location: `${dest} City Center`,
-          estimatedCost: '₹3,500',
-          isIndoor: true
-        },
-        {
-          id: 'act_1_2',
-          time: '',
-          title: `Panoramas & Welcome Cocktails`,
-          description: `Enjoy panoramic skyline views over ${dest} with curated welcome beverages.`,
-          category: 'Leisure',
-          location: `Rooftop Lounge, ${dest}`,
-          estimatedCost: '₹2,200',
-          isIndoor: false
-        },
-        {
-          id: 'act_1_3',
-          time: '',
-          title: `Chef's Tasting Menu Dinner`,
-          description: `Multi-course seasonal pairing dinner highlighting authentic regional gastronomy.`,
-          category: 'Dining',
-          location: `Grand Bistro, ${dest}`,
-          estimatedCost: '₹4,500',
-          isIndoor: true
-        }
-      ]
-    },
-    {
-      dayNumber: 2,
-      date: d2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
-      weather: { temp: '17°C / 62°F', condition: 'Light Scattered Rain', icon: '🌧️', isRainy: true },
-      activities: [
-        {
-          id: 'act_2_1',
-          time: '',
-          title: `National Art Gallery VIP Tour`,
-          description: `Exclusive skip-the-line access guided by a master art historian.`,
-          category: 'Culture',
-          location: `National Art Gallery, ${dest}`,
-          estimatedCost: '₹2,800',
-          isIndoor: true
-        },
-        {
-          id: 'act_2_2',
-          time: '',
-          title: `Covered Market Tasting & Lunch`,
-          description: `Sample regional specialties, warm pastries, and fine beverages indoors.`,
-          category: 'Dining',
-          location: `Historic Arcade Market, ${dest}`,
-          estimatedCost: '₹1,800',
-          isIndoor: true
-        },
-        {
-          id: 'act_2_3',
-          time: '',
-          title: `Palais de Musique Evening Concert`,
-          description: `Premium seating at the historic music hall for an acoustic performance.`,
-          category: 'Culture',
-          location: `Palais de Musique, ${dest}`,
-          estimatedCost: '₹5,200',
-          isIndoor: true
-        }
-      ]
-    },
-    {
-      dayNumber: 3,
-      date: d3.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
-      weather: { temp: '23°C / 73°F', condition: 'Sunny & Pleasant', icon: '🌤️', isRainy: false },
-      activities: [
-        {
-          id: 'act_3_1',
-          time: '',
-          title: `Old Quarter Architectural Walk`,
-          description: `Explore historic neighborhood hidden courtyards and landmark vistas.`,
-          category: 'Outdoor',
-          location: `Old Quarter, ${dest}`,
-          estimatedCost: '₹1,200',
-          isIndoor: false
-        },
-        {
-          id: 'act_3_2',
-          time: '',
-          title: `Artisan Perfume & Craft Workshop`,
-          description: `Craft your custom signature scent under master artisan guidance.`,
-          category: 'Leisure',
-          location: `Atelier Privé, ${dest}`,
-          estimatedCost: '₹3,200',
-          isIndoor: true
-        },
-        {
-          id: 'act_3_3',
-          time: '',
-          title: `Illuminated Sunset River Cruise`,
-          description: `Private chartered launch featuring live jazz, champagne, and illuminated city views.`,
-          category: 'Leisure',
-          location: `Grand Promenade Launch, ${dest}`,
-          estimatedCost: '₹4,800',
-          isIndoor: false
-        }
-      ]
-    }
-  ];
-
-  return days;
+export function generateFallbackItinerary(_destination?: string, _startDateStr?: string): ItineraryDay[] {
+  return [];
 }
