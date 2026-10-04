@@ -12,19 +12,25 @@ from sqlalchemy.ext.asyncio import (
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if DATABASE_URL.startswith("postgre://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg", 1)
+elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith(
+    "postgresql+asyncpg://"
+):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 DEFAULT_CONTEXT = ssl.create_default_context()
 DEFAULT_CONTEXT.check_hostname = False
 DEFAULT_CONTEXT.verify_mode = ssl.CERT_NONE
-
+connect_args = {
+    "prepared_statement_cache_size": 0,
+    "statement_cache_size": 0,
+    "ssl": DEFAULT_CONTEXT,
+}
 engine = create_async_engine(
     url=DATABASE_URL,  # type: ignore
     echo=True,
-    connect_args={
-        "prepared_statement_cache_size": 0,
-        "statement_cache_size": 0,
-        "ssl": DEFAULT_CONTEXT,
-    },
+    connect_args=connect_args,
 )
 
 session_factory = async_sessionmaker(
