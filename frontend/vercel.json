@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-RAILWAY-BACKEND-URL.up.railway.app/api/:path*"
+      "destination": "https://ai-travel-concierge.up.railway.app/api/:path*"
     },
     {
       "source": "/tools/:path*",
-      "destination": "https://YOUR-RAILWAY-BACKEND-URL.up.railway.app/tools/:path*"
+      "destination": "https://ai-travel-concierge.up.railway.app/tools/:path*"
     },
     {
       "source": "/(.*)",
