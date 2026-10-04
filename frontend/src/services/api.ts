@@ -126,7 +126,7 @@ export async function sendChatMessage(
     throw new Error(`Backend request failed (${response.status}): ${errorText}`);
   }
 
-  const contentType = response.headers.get('content-type') || '';
+  const contentType = response.headers?.get ? response.headers.get('content-type') || '' : '';
   if (contentType.includes('text/event-stream')) {
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
@@ -138,8 +138,11 @@ export async function sendChatMessage(
         if (done) break;
         replyText += decoder.decode(value, { stream: true });
       }
-    } else {
+    } else if (typeof response.text === 'function') {
       replyText = await response.text();
+    } else if (typeof (response as any).json === 'function') {
+      const data = await (response as any).json();
+      replyText = typeof data === 'string' ? data : (data.reply || JSON.stringify(data));
     }
 
     return {
