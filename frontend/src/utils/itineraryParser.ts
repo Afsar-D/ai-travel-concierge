@@ -118,10 +118,67 @@ export function parseMarkdownToItinerary(
     }
   }
 
-  const dayHeaderRegex = /(?:^|\n)(?:#{1,4}\s*)?Day\s+(\d+)[^\n]*/gi;
-  const matches = [...markdownText.matchAll(dayHeaderRegex)];
+  const dayHeaderRegex = /(?:^|\n)(?:#{1,4}\s*|\*{1,2}\s*)?Day\s+(\d+)[^\n]*/gi;
+  let matches = [...markdownText.matchAll(dayHeaderRegex)];
 
   if (matches.length === 0) {
+    // Resilient Fallback: If no explicit 'Day X' headers were found, treat the entire markdownText as Day 1
+    const fallbackDate = new Date(baseYear, baseMonth, baseDay);
+    const formattedDate = fallbackDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      weekday: 'short',
+    });
+
+    const lines = markdownText.split('\n').map(l => l.trim()).filter(Boolean);
+    const activities: Activity[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
+        let cleanContent = line.replace(/^[\*\-•\d\.\s]+/, '').trim();
+        if (!cleanContent || cleanContent.length < 5) continue;
+
+        let placeName = '';
+        const boldMatch = cleanContent.match(/\*\*([^*]+)\*\*/);
+        if (boldMatch && boldMatch[1]) {
+          placeName = boldMatch[1].trim();
+        } else {
+          const firstClause = cleanContent.split(/[,.]/)[0].trim();
+          placeName = firstClause.length <= 35 ? firstClause : firstClause.split(' ').slice(0, 4).join(' ');
+        }
+
+        const finalTitle = cleanActivityTitle(placeName);
+        const description = cleanContent.replace(/\*\*/g, '').trim();
+        const lowerDesc = description.toLowerCase();
+        let category: Activity['category'] = 'Culture';
+        if (lowerDesc.includes('dinner') || lowerDesc.includes('lunch') || lowerDesc.includes('food') || lowerDesc.includes('bistro') || lowerDesc.includes('restaurant')) {
+          category = 'Dining';
+        } else if (lowerDesc.includes('walk') || lowerDesc.includes('beach') || lowerDesc.includes('park') || lowerDesc.includes('fort') || lowerDesc.includes('tour')) {
+          category = 'Outdoor';
+        }
+
+        activities.push({
+          id: `act_1_${i}`,
+          time: '',
+          title: finalTitle,
+          description,
+          category,
+          location: `${finalTitle}, ${destination}`,
+          estimatedCost: getRealisticEstimatedCost(cleanContent, category, budgetTier, i),
+          isIndoor: lowerDesc.includes('museum') || lowerDesc.includes('gallery') || lowerDesc.includes('dining')
+        });
+      }
+    }
+
+    if (activities.length > 0) {
+      return [{
+        dayNumber: 1,
+        date: formattedDate,
+        weather: { temp: '22°C / 72°F', condition: 'Clear & Sunny', icon: '☀️', isRainy: false },
+        activities: activities.slice(0, 6)
+      }];
+    }
     return [];
   }
 

@@ -41,14 +41,27 @@ async def handle_chat(
         "hotel_options": "",
         "currency": payload.currency or "INR",
     }
-    if payload.session_id:
-        statement = (
-            select(ChatMessages)
-            .where(ChatMessages.session_id == payload.session_id)
-            .order_by(col(ChatMessages.timestamp))
+    existing_session = await(session.get(ChatSession,initial_state['session_id']))
+    if not existing_session:
+        record = ChatSession(
+            origin=initial_state["origin"],
+            destination=initial_state["destination"],
+            start_date=initial_state["start_date"],
+            end_date=initial_state["end_date"],
+            budget=initial_state["budget"],
+            guest_count=initial_state["guest_count"],
+            id=initial_state["session_id"],
         )
-        result = await session.exec(statement)
-        messages = result.all()
+        session.add(record)
+        await session.commit()
+    statement = (
+        select(ChatMessages)
+        .where(ChatMessages.session_id == initial_state["session_id"])
+        .order_by(col(ChatMessages.timestamp))
+    )
+    result = await session.exec(statement)
+    messages = result.all()
+    if len(messages) > 0:
         history = [
             {"sender": message.sender, "content": message.content}
             for message in messages
@@ -78,18 +91,6 @@ async def handle_chat(
         await session.commit()
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
     else:
-        context = ChatSession(
-            origin=initial_state["origin"],
-            destination=initial_state["destination"],
-            start_date=initial_state["start_date"],
-            end_date=initial_state["end_date"],
-            budget=initial_state["budget"],
-            guest_count=initial_state["guest_count"],
-            id=initial_state["session_id"],
-        )
-
-        session.add(context)
-        await session.commit()
         user_message = ChatMessages(
             sender="user",
             content=payload.message,
