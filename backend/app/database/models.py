@@ -7,7 +7,7 @@ class ChatSession(SQLModel, table=True):
     __tablename__ = "chat_session"  # pyright: ignore[reportAssignmentType]
     id: str = Field(default=None, primary_key=True)
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+        default_factory=lambda: datetime.now(timezone.utc) 
     )
     origin: str
     destination: str
@@ -25,7 +25,7 @@ class ChatMessages(SQLModel, table=True):
     sender: str
     content: str
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+        default_factory=lambda: datetime.now(timezone.utc) 
     )
     session: ChatSession | None = Relationship(back_populates="messages")
 
@@ -37,7 +37,7 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(unique=True, index=True)
     hashed_password: str
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+        default_factory=lambda: datetime.now(timezone.utc) 
     )
 
 
