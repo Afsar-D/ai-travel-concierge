@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip('"\'')
 if not DATABASE_URL:
     DATABASE_URL = "sqlite+aiosqlite:///./database.db"
 
