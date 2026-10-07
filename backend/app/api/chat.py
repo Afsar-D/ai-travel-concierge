@@ -5,8 +5,9 @@ from app.schema.chat import ChatRequest, ChatResponse
 from fastapi import Depends
 from fastapi.responses import StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, col
+from sqlmodel import desc, select, col
 import uuid
+from datetime import datetime
 from app.database.session import get_session
 from app.database.models import ChatMessages, ChatSession
 from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_stream
@@ -41,7 +42,7 @@ async def handle_chat(
         "hotel_options": "",
         "currency": payload.currency or "INR",
     }
-    existing_session = await(session.get(ChatSession,initial_state['session_id']))
+    existing_session = await session.get(ChatSession, initial_state["session_id"])
     if not existing_session:
         record = ChatSession(
             origin=initial_state["origin"],
@@ -112,3 +113,36 @@ async def handle_chat(
             session_id=initial_state["session_id"],
             status="success",
         )
+
+
+@router.get("/sessions")
+async def get_all_sessions(session: AsyncSession = Depends(get_session)):
+    statement = select(ChatSession).order_by(col(ChatSession.created_at).desc())
+    result = await session.exec(statement=statement)
+    response_list = []
+    for res in result:
+        messages = (
+            select(ChatMessages)
+            .where(
+                ChatMessages.session_id == res.id, ChatMessages.sender == "assistant"
+            )
+            .order_by(col(ChatMessages.timestamp))
+        )
+        msg_result = await session.exec(messages)
+        first_ai_msg = msg_result.first()
+        response_list.append(
+            {
+                "id": res.id,
+                "origin": res.origin,
+                "destination": res.destination,
+                "start_date": res.start_date,
+                "end_date": res.end_date,
+                "budget": res.budget,
+                "guest_count": res.guest_count,
+                "description": (
+                    first_ai_msg.content if first_ai_msg else f"{res.destination} Itinerary"
+                ),
+                "created_at": res.created_at,
+            }
+        )
+    return response_list
