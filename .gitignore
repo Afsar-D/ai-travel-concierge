@@ -6,3 +6,5 @@ __pycache__/
 test/
 .vscode
 project_progress_log.md
+AGENTS.md
+.agents/

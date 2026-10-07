@@ -1,15 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from app.agent.state import AgentState
 from app.agent.graph import travel_agent
 from app.schema.chat import ChatRequest, ChatResponse
-from fastapi import Depends
 from fastapi.responses import StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import desc, select, col
 import uuid
 from datetime import datetime
 from app.database.session import get_session
-from app.database.models import ChatMessages, ChatSession
+from app.database.models import ChatMessages, ChatSession, FlightBooking, HotelBooking
 from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_stream
 
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
@@ -140,9 +139,36 @@ async def get_all_sessions(session: AsyncSession = Depends(get_session)):
                 "budget": res.budget,
                 "guest_count": res.guest_count,
                 "description": (
-                    first_ai_msg.content if first_ai_msg else f"{res.destination} Itinerary"
+                    first_ai_msg.content
+                    if first_ai_msg
+                    else f"{res.destination} Itinerary"
                 ),
                 "created_at": res.created_at,
             }
         )
     return response_list
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str, session: AsyncSession = Depends(get_session)):
+    db_session = await session.get(ChatSession, session_id)
+    if not db_session:
+        return {"status": "success", "message": "Session not found"}
+    messages = await session.exec(
+        select(ChatMessages).where(ChatMessages.session_id == session_id)
+    )
+    for message in messages.all():
+        await session.delete(message)
+    flight = await session.exec(
+        select(FlightBooking).where(FlightBooking.session_id == session_id)
+    )
+    for record in flight.all():
+        await session.delete(record)
+    hotel = await session.exec(
+        select(HotelBooking).where(HotelBooking.session_id == session_id)
+    )
+    for record in hotel.all():
+        await session.delete(record)
+    await session.delete(db_session)
+    await session.commit()
+    return {"status": "success"}

@@ -199,3 +199,20 @@ export async function fetchUserSessions(): Promise<TripState[]> {
   }
 }
 
+export async function deleteUserSession(sessionId: string): Promise<boolean> {
+  try {
+    const token = localStorage.getItem('odyssey_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+      headers,
+    });
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+}
+

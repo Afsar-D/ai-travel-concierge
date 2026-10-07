@@ -9,7 +9,7 @@ import { ExportModal } from './components/ExportModal';
 
 import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
-import { fetchUserSessions } from './services/api';
+import { fetchUserSessions, deleteUserSession } from './services/api';
 import { getDestinationBackgroundImage } from './utils/themeUtils';
 
 export function App() {
@@ -170,6 +170,8 @@ export function App() {
   };
 
   const handleDeleteTrip = (tripId: string) => {
+    deleteUserSession(tripId).catch(() => {});
+
     setTrips(prev => {
       const updated = prev.filter(t => t.id !== tripId);
       try {
