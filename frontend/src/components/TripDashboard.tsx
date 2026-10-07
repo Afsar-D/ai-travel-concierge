@@ -14,7 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { TripState, UserProfile } from '../types';
-import { getTripTheme } from '../utils/themeUtils';
+import { getTripTheme, getDestinationBackgroundImage } from '../utils/themeUtils';
 
 interface TripDashboardProps {
   user: UserProfile;
@@ -142,9 +142,12 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
       <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-700">
         {displayTrip ? (
           <img
-            src={displayTrip.bgImage}
+            src={displayTrip.bgImage || getDestinationBackgroundImage(displayTrip.destination)}
             alt={displayTrip.destination}
             className="w-full h-full object-cover object-center filter brightness-[0.55] contrast-[1.05] transition-all duration-700"
+            onError={(e) => {
+              e.currentTarget.src = getDestinationBackgroundImage(displayTrip.destination);
+            }}
           />
         ) : (
           <img
@@ -367,9 +370,12 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
                     >
                       {/* Background Card Image with Smooth Zoom on Hover */}
                       <img
-                        src={tripItem.bgImage}
+                        src={tripItem.bgImage || getDestinationBackgroundImage(tripItem.destination)}
                         alt={tripItem.destination}
                         className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                        onError={(e) => {
+                          e.currentTarget.src = getDestinationBackgroundImage(tripItem.destination);
+                        }}
                       />
 
                       {/* Smooth Dark Gradient Overlay */}

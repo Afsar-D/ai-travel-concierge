@@ -16,7 +16,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { TripState, ItineraryDay, Activity } from '../types';
-import { getTripTheme } from '../utils/themeUtils';
+import { getTripTheme, getDestinationBackgroundImage } from '../utils/themeUtils';
 import { parseBackendReply } from '../utils/parser';
 
 interface TripPlanViewProps {
@@ -131,9 +131,12 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
       {/* 1. Full-Screen Landscape Background with Dynamic Glow Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-700">
         <img
-          src={trip.bgImage}
+          src={trip.bgImage || getDestinationBackgroundImage(trip.destination)}
           alt={trip.destination}
           className="w-full h-full object-cover object-center filter brightness-[0.50] contrast-[1.05]"
+          onError={(e) => {
+            e.currentTarget.src = getDestinationBackgroundImage(trip.destination);
+          }}
         />
         <div className={`absolute inset-0 bg-gradient-to-t ${tripTheme.glowBg} transition-all duration-700`} />
       </div>

@@ -10,6 +10,7 @@ import { ExportModal } from './components/ExportModal';
 import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
 import { fetchUserSessions } from './services/api';
+import { getDestinationBackgroundImage } from './utils/themeUtils';
 
 export function App() {
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -30,7 +31,14 @@ export function App() {
   const [trips, setTrips] = useState<TripState[]>(() => {
     try {
       const stored = localStorage.getItem('odyssey_trips');
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        const parsed: TripState[] = JSON.parse(stored);
+        return parsed.map(t => ({
+          ...t,
+          bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
+        }));
+      }
+      return [];
     } catch {
       return [];
     }
@@ -42,8 +50,14 @@ export function App() {
         if (remoteTrips && remoteTrips.length > 0) {
           setTrips(prev => {
             const mergedMap = new Map<string, TripState>();
-            remoteTrips.forEach(t => mergedMap.set(t.id, t));
-            prev.forEach(t => mergedMap.set(t.id, t));
+            remoteTrips.forEach(t => mergedMap.set(t.id, {
+              ...t,
+              bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
+            }));
+            prev.forEach(t => mergedMap.set(t.id, {
+              ...t,
+              bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
+            }));
             const merged = Array.from(mergedMap.values());
             try {
               localStorage.setItem('odyssey_trips', JSON.stringify(merged));
@@ -60,7 +74,12 @@ export function App() {
       const storedTrips = localStorage.getItem('odyssey_trips');
       if (storedTrips) {
         const parsed: TripState[] = JSON.parse(storedTrips);
-        return parsed.length > 0 ? parsed[0] : null;
+        if (parsed.length > 0) {
+          return {
+            ...parsed[0],
+            bgImage: parsed[0].bgImage || getDestinationBackgroundImage(parsed[0].destination)
+          };
+        }
       }
     } catch {}
     return null;
