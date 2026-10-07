@@ -52,12 +52,19 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
   const [scrollLeftState, setScrollLeftState] = useState(0);
 
   // Filtered trips list
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const filteredTrips = trips.filter((t) => {
     const matchesSearch = t.destination.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           t.country.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isPastByDate = Boolean(t.end_date && t.end_date < todayStr);
+    const isPast = t.status === 'past' || isPastByDate;
+    const isActive = t.status === 'active' && !isPastByDate;
+
     if (activeFilter === 'bookmarked') return matchesSearch && t.isBookmarked;
-    if (activeFilter === 'active') return matchesSearch && t.status === 'active';
-    if (activeFilter === 'past') return matchesSearch && t.status === 'past';
+    if (activeFilter === 'active') return matchesSearch && isActive;
+    if (activeFilter === 'past') return matchesSearch && isPast;
     return matchesSearch;
   });
 

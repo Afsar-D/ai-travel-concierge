@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { LoginPage } from './components/LoginPage';
 import { TripDashboard } from './components/TripDashboard';
@@ -9,6 +9,7 @@ import { ExportModal } from './components/ExportModal';
 
 import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
+import { fetchUserSessions } from './services/api';
 
 export function App() {
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -34,6 +35,25 @@ export function App() {
       return [];
     }
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchUserSessions().then(remoteTrips => {
+        if (remoteTrips && remoteTrips.length > 0) {
+          setTrips(prev => {
+            const mergedMap = new Map<string, TripState>();
+            remoteTrips.forEach(t => mergedMap.set(t.id, t));
+            prev.forEach(t => mergedMap.set(t.id, t));
+            const merged = Array.from(mergedMap.values());
+            try {
+              localStorage.setItem('odyssey_trips', JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      });
+    }
+  }, [user]);
 
   const [activeTrip, setActiveTrip] = useState<TripState | null>(() => {
     try {

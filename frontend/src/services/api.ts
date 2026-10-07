@@ -1,4 +1,5 @@
 import type { TripState, UserProfile } from '../types';
+import { getDestinationBackgroundImage } from '../utils/themeUtils';
 
 export interface AuthResponse {
   access_token: string;
@@ -172,3 +173,29 @@ export async function fetchSessionInventory(sessionId: string): Promise<{ flight
     return { flights: [], hotels: [] };
   }
 }
+
+export async function fetchUserSessions(): Promise<TripState[]> {
+  try {
+    const res = await fetch('/api/chat/sessions');
+    if (!res.ok) return [];
+    const sessions = await res.json();
+    return sessions.map((s: any) => ({
+      id: s.id,
+      origin: s.origin || 'Mumbai',
+      destination: s.destination || 'Goa',
+      country: s.destination || 'India',
+      description: s.description || `${s.destination} itinerary`,
+      bgImage: getDestinationBackgroundImage(s.destination),
+      start_date: s.start_date || '2026-10-15',
+      end_date: s.end_date || '2026-10-18',
+      budget: s.budget || 'medium',
+      guest_count: s.guest_count || 2,
+      session_id: s.id,
+      status: 'active',
+      isBookmarked: true
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
