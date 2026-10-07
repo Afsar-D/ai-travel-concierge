@@ -4,6 +4,7 @@ function cleanActivityTitle(rawTitle: string): string {
   if (!rawTitle) return 'Local Experience';
 
   let cleaned = rawTitle
+    .replace(/[\[\]]/g, '')
     .replace(/^(?:Visit|Explore|Head to|Stroll through|Check into|Check-in at|Arrive at|Enjoy|Experience|Discover|Dine at|Sample|Take a|Relax at|Walk through|Tour|Have dinner at|Have lunch at|Stop by)\s+/i, '')
     .trim();
 
@@ -11,7 +12,7 @@ function cleanActivityTitle(rawTitle: string): string {
     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
-  cleaned = cleaned.replace(/\*/g, '').trim();
+  cleaned = cleaned.replace(/[\*\[\]]/g, '').trim();
 
   if (cleaned.length > 45) {
     cleaned = cleaned.slice(0, 42).trim() + '...';
@@ -26,6 +27,26 @@ function getRealisticEstimatedCost(
   budgetTier: BudgetTier = 'medium',
   index: number = 0
 ): string {
+  const lowerContent = cleanContent.toLowerCase();
+
+  // 0. Check-in / Hotel arrival / Unpack / Freshen up / Check-out / Free time
+  if (
+    lowerContent.includes('check-in') ||
+    lowerContent.includes('check in') ||
+    lowerContent.includes('check-out') ||
+    lowerContent.includes('check out') ||
+    lowerContent.includes('freshen up') ||
+    lowerContent.includes('unpack') ||
+    lowerContent.includes('rest at hotel') ||
+    lowerContent.includes('relax at hotel') ||
+    lowerContent.includes('relax at resort') ||
+    lowerContent.includes('leisure time') ||
+    lowerContent.includes('free time') ||
+    lowerContent.includes('return to hotel')
+  ) {
+    return 'Included in Stay';
+  }
+
   // 1. Check if AI text explicitly mentions Free
   if (/\b(free|no charge|complimentary|free entry)\b/i.test(cleanContent)) {
     return 'Free Entry';
@@ -281,13 +302,13 @@ export function parseMarkdownToItinerary(
         const boldMatch = cleanContent.match(/\*\*([^*]+)\*\*/);
         
         if (boldMatch && boldMatch[1]) {
-          placeName = boldMatch[1].trim();
+          placeName = boldMatch[1].replace(/[\[\]]/g, '').trim();
         } else {
           const prepMatch = cleanContent.match(/(?:at the|at|visit|explore|in|to|head to|stroll through|check into|check-in at)\s+([A-Z][A-Za-z0-9\s'’-]+)/);
           if (prepMatch && prepMatch[1]) {
             const extracted = prepMatch[1].split(/(?:,|\.|\s+and\s+|\s+or\s+|\s+for\s+)/)[0].trim();
             if (extracted.length > 3 && extracted.length < 40) {
-              placeName = extracted;
+              placeName = extracted.replace(/[\[\]]/g, '');
             }
           }
         }
@@ -296,15 +317,15 @@ export function parseMarkdownToItinerary(
           if (cleanContent.includes(':')) {
             const beforeColon = cleanContent.split(':')[0].trim();
             if (!/^(?:Date|Weather|Morning|Afternoon|Evening|Night|Daytime|Lunch|Dinner|Breakfast)$/i.test(beforeColon)) {
-              placeName = beforeColon;
+              placeName = beforeColon.replace(/[\[\]]/g, '');
             }
           }
           if (!placeName && cleanContent.includes(' - ')) {
-            placeName = cleanContent.split(' - ')[0].trim();
+            placeName = cleanContent.split(' - ')[0].replace(/[\[\]]/g, '').trim();
           }
           if (!placeName) {
             const firstClause = cleanContent.split(/[,.]/)[0].trim();
-            placeName = firstClause.length <= 35 ? firstClause : firstClause.split(' ').slice(0, 4).join(' ');
+            placeName = (firstClause.length <= 35 ? firstClause : firstClause.split(' ').slice(0, 4).join(' ')).replace(/[\[\]]/g, '');
           }
         }
 
@@ -313,11 +334,16 @@ export function parseMarkdownToItinerary(
           finalTitle = 'Local Experience';
         }
 
-        const description = cleanContent.replace(/\*\*/g, '').trim();
+        let description = cleanContent.replace(/\*\*/g, '').trim();
+        // Remove redundant leading title prefix in brackets if present (e.g. "[Hotel Check-in & Freshen Up]: ")
+        description = description.replace(/^[\[\s]*[^\]]+[\]\s]*:\s*/, '').replace(/[\[\]]/g, '').trim();
+        if (!description || description.length < 5) {
+          description = cleanContent.replace(/[\*\[\]]/g, '').trim();
+        }
 
         let locationCapsule = `${destination}`;
         if (finalTitle && !finalTitle.toLowerCase().startsWith('spend') && !finalTitle.toLowerCase().startsWith('enjoy') && !finalTitle.toLowerCase().startsWith('head') && !finalTitle.toLowerCase().startsWith('arrive')) {
-          locationCapsule = `${finalTitle}, ${destination}`;
+          locationCapsule = `${finalTitle.replace(/[\[\]]/g, '')}, ${destination}`;
         } else {
           locationCapsule = `Central ${destination}`;
         }

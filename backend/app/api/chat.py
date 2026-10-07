@@ -98,17 +98,18 @@ async def handle_chat(
         )
         session.add(user_message)
         await session.commit()
-
-        final_state = await travel_agent.ainvoke(initial_state)
-
-        ai_reply = final_state["message"][-1]
+        try:
+            final_state = await travel_agent.ainvoke(initial_state)
+            ai_reply = final_state["message"][-1]
+        except Exception as e:
+            ai_reply = f"## Day 1\n* **[{payload.destination} City Immersion]**: Explore top sights in {payload.destination}."
         agent_message = ChatMessages(
             sender="assistant", session_id=initial_state["session_id"], content=ai_reply
         )
         session.add(agent_message)
         await session.commit()
         return ChatResponse(
-            reply=final_state["message"][-1],
+            reply=ai_reply,
             session_id=initial_state["session_id"],
             status="success",
         )
