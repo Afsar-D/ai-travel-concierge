@@ -14,7 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { TripState, UserProfile } from '../types';
-import { getTripTheme, getDestinationBackgroundImage } from '../utils/themeUtils';
+import { getTripTheme, getDestinationBackgroundImage, formatLocationName, capitalizeWords } from '../utils/themeUtils';
 
 interface TripDashboardProps {
   user: UserProfile;
@@ -306,10 +306,10 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
               <div className="space-y-6 max-w-xl">
                 <div>
                   <span className={`text-xs font-bold uppercase tracking-widest block mb-1 ${activeTheme.badgeText}`}>
-                    {displayTrip?.country} • {displayTrip?.start_date}
+                    {displayTrip?.country && displayTrip.country.toLowerCase() !== displayTrip.destination.toLowerCase() ? capitalizeWords(displayTrip.country) : 'India'} • {displayTrip?.start_date}
                   </span>
                   <h1 className="font-extrabold text-5xl sm:text-7xl md:text-8xl tracking-tight text-white uppercase leading-none drop-shadow-md">
-                    {displayTrip?.destination}
+                    {capitalizeWords(displayTrip?.destination)}
                   </h1>
                 </div>
 
@@ -429,7 +429,7 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
                           <span>•••••</span>
                         </div>
                         <h4 className="font-bold text-lg leading-tight truncate group-hover:text-white transition-colors duration-300">
-                          {tripItem.destination}, {tripItem.country}
+                          {formatLocationName(tripItem.destination, tripItem.country)}
                         </h4>
                         <span className="text-[10px] text-slate-300 block">
                           {tripItem.start_date}

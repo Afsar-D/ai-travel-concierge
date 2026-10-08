@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { Globe } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { TripDashboard } from './components/TripDashboard';
 import { TripPlanView } from './components/TripPlanView';
@@ -44,28 +45,56 @@ export function App() {
     }
   });
 
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+
   useEffect(() => {
     if (user) {
-      fetchUserSessions().then(remoteTrips => {
-        if (remoteTrips && remoteTrips.length > 0) {
-          setTrips(prev => {
-            const mergedMap = new Map<string, TripState>();
-            remoteTrips.forEach(t => mergedMap.set(t.id, {
-              ...t,
-              bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
-            }));
-            prev.forEach(t => mergedMap.set(t.id, {
-              ...t,
-              bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
-            }));
-            const merged = Array.from(mergedMap.values());
-            try {
-              localStorage.setItem('odyssey_trips', JSON.stringify(merged));
-            } catch {}
-            return merged;
-          });
-        }
-      });
+      setIsInitialLoading(true);
+      fetchUserSessions()
+        .then(remoteTrips => {
+          if (remoteTrips && remoteTrips.length > 0) {
+            // Pre-load images in background for instant presentation
+            remoteTrips.forEach(rt => {
+              const url = rt.bgImage || getDestinationBackgroundImage(rt.destination);
+              const img = new Image();
+              img.src = url;
+            });
+
+            setTrips(prev => {
+              const remoteKeys = new Set<string>();
+              remoteTrips.forEach(rt => {
+                if (rt.id) remoteKeys.add(rt.id);
+                if (rt.session_id) remoteKeys.add(rt.session_id);
+                if (rt.destination && rt.start_date) {
+                  remoteKeys.add(`${rt.destination.toLowerCase().trim()}_${rt.start_date}`);
+                }
+              });
+
+              const localOnly = prev.filter(pt => {
+                const destKey = `${pt.destination.toLowerCase().trim()}_${pt.start_date}`;
+                return !remoteKeys.has(pt.id) && !remoteKeys.has(pt.session_id) && !remoteKeys.has(destKey);
+              });
+
+              const cleanRemote = remoteTrips.map(rt => ({
+                ...rt,
+                bgImage: rt.bgImage || getDestinationBackgroundImage(rt.destination)
+              }));
+
+              const merged = [...cleanRemote, ...localOnly];
+              try {
+                localStorage.setItem('odyssey_trips', JSON.stringify(merged));
+              } catch {}
+              return merged;
+            });
+          }
+        })
+        .finally(() => {
+          setTimeout(() => {
+            setIsInitialLoading(false);
+          }, 500);
+        });
+    } else {
+      setIsInitialLoading(false);
     }
   }, [user]);
 
@@ -139,7 +168,12 @@ export function App() {
 
   const handleCreateTrip = (newTrip: TripState) => {
     setTrips(prev => {
-      const updated = [newTrip, ...prev];
+      const filtered = prev.filter(t => 
+        t.id !== newTrip.id && 
+        t.session_id !== newTrip.session_id &&
+        !(t.destination.toLowerCase().trim() === newTrip.destination.toLowerCase().trim() && t.start_date === newTrip.start_date)
+      );
+      const updated = [newTrip, ...filtered];
       try {
         localStorage.setItem('odyssey_trips', JSON.stringify(updated));
       } catch (e) {}
@@ -194,6 +228,40 @@ export function App() {
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (isInitialLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#06080E] text-white flex flex-col items-center justify-center font-sans select-none overflow-hidden">
+        {/* Ambient Radial Background Glow */}
+        <div className="absolute w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute w-64 h-64 rounded-full bg-indigo-600/10 blur-[100px] pointer-events-none" />
+
+        {/* Outer Ring & Spinning Globe Icon */}
+        <div className="relative flex items-center justify-center mb-8">
+          <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#D4AF37]/40 animate-spin" style={{ animationDuration: '8s' }} />
+          <div className="absolute w-16 h-16 rounded-full border-2 border-t-[#D4AF37] border-r-transparent border-b-indigo-500 border-l-transparent animate-spin" style={{ animationDuration: '2s' }} />
+          <div className="absolute w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl">
+            <Globe className="w-6 h-6 text-[#D4AF37] animate-pulse" />
+          </div>
+        </div>
+
+        {/* Branding & Status */}
+        <div className="text-center space-y-3 z-10 max-w-sm px-6">
+          <h1 className="font-extrabold text-3xl tracking-widest text-white uppercase drop-shadow-lg">
+            ODYSSEY <span className="text-[#D4AF37]">AI</span>
+          </h1>
+          <p className="text-xs tracking-widest text-slate-400 uppercase font-mono">
+            Curating your luxury itineraries...
+          </p>
+
+          {/* Shimmer Loading Bar */}
+          <div className="w-48 h-1 bg-white/10 rounded-full mx-auto overflow-hidden relative mt-4">
+            <div className="absolute inset-y-0 bg-gradient-to-r from-[#D4AF37] via-amber-200 to-[#D4AF37] w-full animate-pulse rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

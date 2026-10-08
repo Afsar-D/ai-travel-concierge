@@ -16,7 +16,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { TripState, ItineraryDay, Activity } from '../types';
-import { getTripTheme, getDestinationBackgroundImage } from '../utils/themeUtils';
+import { getTripTheme, getDestinationBackgroundImage, capitalizeWords } from '../utils/themeUtils';
 import { parseBackendReply } from '../utils/parser';
 
 interface TripPlanViewProps {
@@ -156,10 +156,10 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
         {/* Minimalist Center Title */}
         <div className="text-center">
           <span className={`text-[10px] font-bold uppercase tracking-widest block ${tripTheme.badgeText}`}>
-            {trip.country} • Full Trip Plan
+            {trip.country && trip.country.toLowerCase() !== trip.destination.toLowerCase() ? capitalizeWords(trip.country) : 'India'} • Full Trip Plan
           </span>
           <h1 className="font-bold text-2xl uppercase tracking-tight text-white drop-shadow-md">
-            {trip.destination}
+            {capitalizeWords(trip.destination)}
           </h1>
         </div>
 

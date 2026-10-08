@@ -104,8 +104,9 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
       const newTrip: TripState = {
         ...initialTrip,
-        description: response.reply || initialTrip.description,
+        id: response.session_id || initialTrip.id,
         session_id: response.session_id || initialTrip.session_id,
+        description: response.reply || initialTrip.description,
         bgImage: initialTrip.bgImage || getDestinationBackgroundImage(destination)
       };
 
