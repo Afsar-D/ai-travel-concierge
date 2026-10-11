@@ -26,6 +26,9 @@ interface TripPlanViewProps {
   onOpenConciergeChat: () => void;
   onOpenExport: () => void;
   onDeleteTrip: (tripId: string) => void;
+  selectedDayIndex?: number;
+  onSelectDayIndex?: (idx: number) => void;
+  lastUpdatedDayNumber?: number | null;
 }
 
 export const TripPlanView: React.FC<TripPlanViewProps> = ({
@@ -34,12 +37,17 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   onBack,
   onOpenConciergeChat,
   onOpenExport,
-  onDeleteTrip
+  onDeleteTrip,
+  selectedDayIndex,
+  onSelectDayIndex,
+  lastUpdatedDayNumber
 }) => {
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [internalDayIndex, setInternalDayIndex] = useState(0);
+  const currentDayIndex = typeof selectedDayIndex === 'number' ? selectedDayIndex : internalDayIndex;
+  const setDayIndex = onSelectDayIndex || setInternalDayIndex;
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inventory'>('itinerary');
 
-  const activeDay = days[selectedDayIndex] || days[0];
+  const activeDay = days[currentDayIndex] || days[0];
 
   // Dynamic Theme Palette for this specific trip
   const tripTheme = getTripTheme(trip.destination, trip.country);
@@ -217,21 +225,29 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
             <div className="p-3 rounded-3xl bg-white/5 border border-white/15 backdrop-blur-xl shadow-xl">
               <div className="flex items-center space-x-3 overflow-x-auto pb-1 pt-1 px-1 no-scrollbar">
                 {days.map((day, idx) => {
-                  const isSelected = selectedDayIndex === idx;
+                  const isSelected = currentDayIndex === idx;
+                  const isRecentlyUpdated = lastUpdatedDayNumber === day.dayNumber;
                   return (
                     <button
                       key={day.dayNumber}
-                      onClick={() => setSelectedDayIndex(idx)}
-                      className={`px-5 py-3 rounded-2xl min-w-[145px] flex flex-col justify-between border transition-all duration-300 text-left ${
+                      onClick={() => setDayIndex(idx)}
+                      className={`px-5 py-3 rounded-2xl min-w-[145px] flex flex-col justify-between border transition-all duration-300 text-left relative overflow-hidden ${
                         isSelected
                           ? `${tripTheme.buttonAccent} shadow-lg scale-[1.02]`
                           : 'bg-white/5 border-white/10 text-white hover:bg-white/15 hover:border-white/25 backdrop-blur-md opacity-90'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className={`font-bold text-xs ${isSelected ? 'text-slate-950' : 'text-white'}`}>
-                          Day {day.dayNumber}
-                        </span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className={`font-bold text-xs ${isSelected ? 'text-slate-950' : 'text-white'}`}>
+                            Day {day.dayNumber}
+                          </span>
+                          {isRecentlyUpdated && (
+                            <span className="text-[8px] bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 px-1.5 py-0.2 rounded-full font-bold uppercase animate-pulse">
+                              Updated
+                            </span>
+                          )}
+                        </div>
                         <span className="text-sm">{day.weather.icon}</span>
                       </div>
                       <div className={`text-[10px] font-medium ${isSelected ? 'text-slate-900/80' : 'text-slate-300'}`}>

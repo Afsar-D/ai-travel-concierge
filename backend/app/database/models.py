@@ -10,6 +10,7 @@ class ChatSession(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         sa_column=Column(DateTime(timezone=False)),
     )
+    user_email: str | None = Field(default=None, index=True)
     origin: str
     destination: str
     start_date: str

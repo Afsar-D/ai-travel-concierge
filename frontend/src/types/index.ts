@@ -28,6 +28,9 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   status?: 'sending' | 'success' | 'error';
+  itineraryUpdated?: boolean;
+  updatedDaysSummary?: string;
+  targetDayNumber?: number;
 }
 
 export interface Activity {

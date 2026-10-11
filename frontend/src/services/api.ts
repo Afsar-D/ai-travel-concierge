@@ -162,7 +162,12 @@ export async function sendChatMessage(
 
 export async function fetchSessionInventory(sessionId: string): Promise<{ flights: any[]; hotels: any[] }> {
   try {
-    const res = await fetch(`/api/chat/session/${encodeURIComponent(sessionId)}/inventory`);
+    const token = localStorage.getItem('odyssey_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`/api/chat/session/${encodeURIComponent(sessionId)}/inventory`, { headers });
     if (!res.ok) return { flights: [], hotels: [] };
     const data = await res.json();
     return {
@@ -176,7 +181,12 @@ export async function fetchSessionInventory(sessionId: string): Promise<{ flight
 
 export async function fetchUserSessions(): Promise<TripState[]> {
   try {
-    const res = await fetch('/api/chat/sessions');
+    const token = localStorage.getItem('odyssey_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch('/api/chat/sessions', { headers });
     if (!res.ok) return [];
     const sessions = await res.json();
     return sessions.map((s: any) => ({

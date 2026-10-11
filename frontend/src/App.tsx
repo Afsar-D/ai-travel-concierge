@@ -29,9 +29,19 @@ export function App() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
+  const getTripStorageKey = (userEmail?: string | null) => {
+    if (userEmail) {
+      return `odyssey_trips_${userEmail.toLowerCase().trim()}`;
+    }
+    return 'odyssey_trips';
+  };
+
   const [trips, setTrips] = useState<TripState[]>(() => {
     try {
-      const stored = localStorage.getItem('odyssey_trips');
+      const storedUser = localStorage.getItem('odyssey_user');
+      const email = storedUser ? JSON.parse(storedUser)?.email : null;
+      const key = getTripStorageKey(email);
+      const stored = localStorage.getItem(key);
       if (stored) {
         const parsed: TripState[] = JSON.parse(stored);
         return parsed.map(t => ({
@@ -50,6 +60,30 @@ export function App() {
   useEffect(() => {
     if (user) {
       setIsInitialLoading(true);
+      const storageKey = getTripStorageKey(user.email);
+      
+      // Load user-scoped local trips first
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const parsed: TripState[] = JSON.parse(stored);
+          setTrips(parsed);
+          if (parsed.length > 0) {
+            setActiveTrip(parsed[0]);
+            setItineraryDays(parseMarkdownToItinerary(parsed[0].description, parsed[0].destination, parsed[0].start_date, parsed[0].budget));
+          } else {
+            setActiveTrip(null);
+            setItineraryDays([]);
+          }
+        } else {
+          setTrips([]);
+          setActiveTrip(null);
+          setItineraryDays([]);
+        }
+      } catch {
+        setTrips([]);
+      }
+
       fetchUserSessions()
         .then(remoteTrips => {
           if (remoteTrips && remoteTrips.length > 0) {
@@ -82,7 +116,7 @@ export function App() {
 
               const merged = [...cleanRemote, ...localOnly];
               try {
-                localStorage.setItem('odyssey_trips', JSON.stringify(merged));
+                localStorage.setItem(storageKey, JSON.stringify(merged));
               } catch {}
               return merged;
             });
@@ -94,13 +128,19 @@ export function App() {
           }, 500);
         });
     } else {
+      setTrips([]);
+      setActiveTrip(null);
+      setItineraryDays([]);
       setIsInitialLoading(false);
     }
   }, [user]);
 
   const [activeTrip, setActiveTrip] = useState<TripState | null>(() => {
     try {
-      const storedTrips = localStorage.getItem('odyssey_trips');
+      const storedUser = localStorage.getItem('odyssey_user');
+      const email = storedUser ? JSON.parse(storedUser)?.email : null;
+      const key = getTripStorageKey(email);
+      const storedTrips = localStorage.getItem(key);
       if (storedTrips) {
         const parsed: TripState[] = JSON.parse(storedTrips);
         if (parsed.length > 0) {
@@ -125,6 +165,23 @@ export function App() {
     setUser(userProfile);
     try {
       localStorage.setItem('odyssey_user', JSON.stringify(userProfile));
+      const key = getTripStorageKey(userProfile.email);
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed: TripState[] = JSON.parse(stored);
+        setTrips(parsed);
+        if (parsed.length > 0) {
+          setActiveTrip(parsed[0]);
+          setItineraryDays(parseMarkdownToItinerary(parsed[0].description, parsed[0].destination, parsed[0].start_date, parsed[0].budget));
+        } else {
+          setActiveTrip(null);
+          setItineraryDays([]);
+        }
+      } else {
+        setTrips([]);
+        setActiveTrip(null);
+        setItineraryDays([]);
+      }
     } catch (e) {
       // Storage quota fallback
     }
@@ -132,6 +189,7 @@ export function App() {
   };
 
   const handleLogout = () => {
+    const currentEmail = user?.email;
     setUser(null);
     setTrips([]);
     setActiveTrip(null);
@@ -140,6 +198,9 @@ export function App() {
       localStorage.removeItem('odyssey_user');
       localStorage.removeItem('odyssey_token');
       localStorage.removeItem('odyssey_trips');
+      if (currentEmail) {
+        localStorage.removeItem(getTripStorageKey(currentEmail));
+      }
     } catch (e) {
       // Storage quota fallback
     }
@@ -160,7 +221,7 @@ export function App() {
     setTrips(prev => {
       const updated = prev.map(t => t.id === tripId ? { ...t, isBookmarked: !t.isBookmarked } : t);
       try {
-        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+        localStorage.setItem(getTripStorageKey(user?.email), JSON.stringify(updated));
       } catch (e) {}
       return updated;
     });
@@ -175,7 +236,7 @@ export function App() {
       );
       const updated = [newTrip, ...filtered];
       try {
-        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+        localStorage.setItem(getTripStorageKey(user?.email), JSON.stringify(updated));
       } catch (e) {}
       return updated;
     });
@@ -191,13 +252,27 @@ export function App() {
     });
   };
 
+  const [selectedTimelineDayIndex, setSelectedTimelineDayIndex] = useState<number>(0);
+  const [lastUpdatedDayNumber, setLastUpdatedDayNumber] = useState<number | null>(null);
+
+  const handleNavigateToDay = (dayNumber: number) => {
+    const idx = Math.max(0, dayNumber - 1);
+    setSelectedTimelineDayIndex(idx);
+    setLastUpdatedDayNumber(dayNumber);
+    setViewMode('planDetail');
+  };
+
   const handleUpdateItinerary = (updatedTrip: TripState, updatedDays: ItineraryDay[]) => {
     setActiveTrip(updatedTrip);
     setItineraryDays(updatedDays);
     setTrips(prev => {
-      const updated = prev.map(t => t.id === updatedTrip.id ? updatedTrip : t);
+      const updated = prev.map(t => 
+        (t.id === updatedTrip.id || (t.session_id && t.session_id === updatedTrip.session_id)) 
+          ? updatedTrip 
+          : t
+      );
       try {
-        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+        localStorage.setItem(getTripStorageKey(user?.email), JSON.stringify(updated));
       } catch (e) {}
       return updated;
     });
@@ -209,7 +284,7 @@ export function App() {
     setTrips(prev => {
       const updated = prev.filter(t => t.id !== tripId);
       try {
-        localStorage.setItem('odyssey_trips', JSON.stringify(updated));
+        localStorage.setItem(getTripStorageKey(user?.email), JSON.stringify(updated));
       } catch (e) {}
 
       if (activeTrip && activeTrip.id === tripId) {
@@ -284,6 +359,9 @@ export function App() {
         <TripPlanView
           trip={activeTrip!}
           days={itineraryDays}
+          selectedDayIndex={selectedTimelineDayIndex}
+          onSelectDayIndex={setSelectedTimelineDayIndex}
+          lastUpdatedDayNumber={lastUpdatedDayNumber}
           onBack={() => setViewMode('dashboard')}
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
@@ -296,6 +374,7 @@ export function App() {
         onClose={() => setIsConciergeOpen(false)}
         trip={activeTrip}
         onUpdateItinerary={handleUpdateItinerary}
+        onNavigateToDay={handleNavigateToDay}
       />
 
       <CreateTripModal

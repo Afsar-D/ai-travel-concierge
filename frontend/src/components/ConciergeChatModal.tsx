@@ -12,13 +12,15 @@ interface ConciergeChatModalProps {
   onClose: () => void;
   trip: TripState | null;
   onUpdateItinerary?: (updatedTrip: TripState, updatedDays: ItineraryDay[]) => void;
+  onNavigateToDay?: (dayNumber: number) => void;
 }
 
 export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   isOpen,
   onClose,
   trip,
-  onUpdateItinerary
+  onUpdateItinerary,
+  onNavigateToDay
 }) => {
   const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>(() => {
     try {
@@ -85,34 +87,95 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
     addMessageToCurrentTrip(userMsg);
     setIsLoading(true);
 
+    // Detect if user is asking to change or update their itinerary
+    const isPlanModification = /\b(change|modify|update|add|remove|replace|swap|switch|substitute|day\s*\d+|instead of|delete|reschedule|adjust)\b/i.test(userText);
+    const messageToSend = isPlanModification
+      ? `${userText}\n\n[Please provide the updated itinerary for the affected day(s) using "## Day X" and "* **[Activity Title]**: Description" format so my timeline updates.]`
+      : userText;
+
     try {
-      const { response } = await sendChatMessage(userText, trip);
+      const { response } = await sendChatMessage(messageToSend, trip);
 
       if (response.session_id && trip) {
         trip.session_id = response.session_id;
       }
 
+      let hasUpdatedItinerary = false;
+      let summaryText = '';
+      let parsedDays: ItineraryDay[] = [];
+
       if (response.reply && trip) {
-        const parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date, trip.budget);
+        // 1. Attempt to parse any updated day blocks from reply
+        parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date, trip.budget);
         const parsedData = parseBackendReply(response.reply, trip.origin, trip.destination);
 
-        if (parsedDays.length > 0 || parsedData.flights.length > 0 || parsedData.hotels.length > 0) {
-          const combinedDescription = (parsedData.flights.length > 0 || parsedData.hotels.length > 0)
-            ? `${trip.description}\n\n${response.reply}`
-            : response.reply;
+        // 2. Fallback: if no ## Day header was generated, check if a specific day was mentioned with bullet points
+        if (parsedDays.length === 0) {
+          const dayMatch = userText.match(/day\s*(\d+)/i) || response.reply.match(/day\s*(\d+)/i);
+          if (dayMatch) {
+            const targetDayNum = parseInt(dayMatch[1], 10);
+            const syntheticMarkdown = `## Day ${targetDayNum}\n${response.reply}`;
+            const fallbackParsed = parseMarkdownToItinerary(syntheticMarkdown, trip.destination, trip.start_date, trip.budget);
+            if (fallbackParsed.length > 0 && fallbackParsed[0].activities.length > 0) {
+              parsedDays = fallbackParsed;
+            }
+          }
+        }
 
+        // 3. Merge updated days with existing days (never wipe out untouched days)
+        if (parsedDays.length > 0) {
+          hasUpdatedItinerary = true;
+          const updatedDayLabels = parsedDays.map(d => `Day ${d.dayNumber}`).join(', ');
+          summaryText = `Plan updated for ${updatedDayLabels}`;
+
+          const existingDays = parseMarkdownToItinerary(trip.description, trip.destination, trip.start_date, trip.budget);
+          const updatedMap = new Map<number, ItineraryDay>();
+          parsedDays.forEach(d => updatedMap.set(d.dayNumber, d));
+
+          let mergedDays: ItineraryDay[];
+          if (parsedDays.length >= existingDays.length && parsedDays[0].dayNumber === 1) {
+            mergedDays = parsedDays;
+          } else {
+            mergedDays = existingDays.map(ed => updatedMap.get(ed.dayNumber) || ed);
+            parsedDays.forEach(pd => {
+              if (!existingDays.some(ed => ed.dayNumber === pd.dayNumber)) {
+                mergedDays.push(pd);
+              }
+            });
+            mergedDays.sort((a, b) => a.dayNumber - b.dayNumber);
+          }
+
+          // 4. Update trip description markdown with the updated day sections
+          let updatedDescription = trip.description || '';
+          parsedDays.forEach(pd => {
+            const dayHeaderRegex = new RegExp(`##\\s*Day\\s*${pd.dayNumber}[\\s\\S]*?(?=(##\\s*Day\\s*\\d+|$))`, 'i');
+            const dayMarkdown = `## Day ${pd.dayNumber}\n` + pd.activities.map(act => `* **[${act.title}]**: ${act.description}`).join('\n') + '\n\n';
+            if (dayHeaderRegex.test(updatedDescription)) {
+              updatedDescription = updatedDescription.replace(dayHeaderRegex, dayMarkdown);
+            } else {
+              updatedDescription += `\n\n${dayMarkdown}`;
+            }
+          });
+
+          const updatedTrip: TripState = {
+            ...trip,
+            description: updatedDescription,
+            session_id: response.session_id || trip.session_id
+          };
+
+          if (onUpdateItinerary) {
+            onUpdateItinerary(updatedTrip, mergedDays);
+          }
+        } else if (parsedData.flights.length > 0 || parsedData.hotels.length > 0) {
+          const combinedDescription = `${trip.description}\n\n${response.reply}`;
           const updatedTrip: TripState = {
             ...trip,
             description: combinedDescription,
             session_id: response.session_id || trip.session_id
           };
-
-          const daysToUse = parsedDays.length > 0
-            ? parsedDays
-            : parseMarkdownToItinerary(combinedDescription, trip.destination, trip.start_date, trip.budget);
-
+          const currentDays = parseMarkdownToItinerary(combinedDescription, trip.destination, trip.start_date, trip.budget);
           if (onUpdateItinerary) {
-            onUpdateItinerary(updatedTrip, daysToUse);
+            onUpdateItinerary(updatedTrip, currentDays);
           }
         }
       }
@@ -122,11 +185,14 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         sender: 'assistant',
         content: response.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'success'
+        status: 'success',
+        itineraryUpdated: hasUpdatedItinerary,
+        updatedDaysSummary: summaryText,
+        targetDayNumber: parsedDays[0]?.dayNumber || 1
       };
 
       addMessageToCurrentTrip(botMsg);
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg: ChatMessage = {
         id: `bot_err_${Date.now()}`,
         sender: 'assistant',
@@ -141,9 +207,9 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   };
 
   const quickPrompts = [
-    `🍷 Michelin Dining in ${trip ? trip.destination : 'city'}`,
-    `☀️ Weather & Indoor Plan`,
-    `🚗 Private Ground Transit`
+    `✨ Change Day 1 to relaxing luxury dinner`,
+    `🌊 Swap Day 2 for beach water sports`,
+    `🍷 Michelin Dining in ${trip ? trip.destination : 'city'}`
   ];
 
   return (
@@ -230,7 +296,33 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
                   <span>{msg.timestamp}</span>
                 </div>
                 {msg.sender === 'assistant' ? (
-                  <MarkdownView content={msg.content} />
+                  <>
+                    <MarkdownView content={msg.content} />
+                    {msg.itineraryUpdated && (
+                      <div className="mt-3 pt-2.5 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-400 font-medium">
+                        <span className="flex items-center space-x-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                          <span>{msg.updatedDaysSummary || 'Itinerary Timeline Updated'}</span>
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full text-emerald-300 font-semibold shadow-sm">
+                            Saved to Plan
+                          </span>
+                          {msg.targetDayNumber && onNavigateToDay && (
+                            <button
+                              onClick={() => {
+                                onNavigateToDay(msg.targetDayNumber!);
+                                onClose();
+                              }}
+                              className="text-[10px] bg-[#D4B886] hover:bg-[#E2CB9F] text-slate-950 font-extrabold px-3 py-1 rounded-full shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                            >
+                              View in Timeline →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="whitespace-pre-line">{msg.content}</div>
                 )}

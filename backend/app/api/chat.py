@@ -1,17 +1,34 @@
+import jose
+import jose.jwt
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from app.config.security import SECRET_KEY, ALGORITHM
 from app.agent.state import AgentState
 from app.agent.graph import travel_agent
 from app.schema.chat import ChatRequest, ChatResponse
 from fastapi.responses import StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import desc, select, col
+from sqlmodel import select, col
 import uuid
-from datetime import datetime
 from app.database.session import get_session
-from app.database.models import ChatMessages, ChatSession, FlightBooking, HotelBooking
-from app.agent.graph import generate_iternerary, continuous_chat_stream, chat_stream
+from app.database.models import (
+    ChatMessages,
+    ChatSession,
+    FlightBooking,
+    HotelBooking,
+)
+from app.agent.graph import continuous_chat_stream, chat_stream
 
+security = HTTPBearer(auto_error=False)
 router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
+
+
+def extracter(key, algo, token):
+    try:
+        var = jose.jwt.decode(key=key, algorithms=[algo], token=token)
+        return var["sub"]
+    except:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
 @router.post(
@@ -25,7 +42,9 @@ router = APIRouter(prefix="/api/chat", tags=["AI Chat"])
     },
 )
 async def handle_chat(
-    payload: ChatRequest, session: AsyncSession = Depends(get_session)
+    payload: ChatRequest,
+    session: AsyncSession = Depends(get_session),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> ChatResponse | StreamingResponse:
     initial_state: AgentState = {
         "message": [payload.message],
@@ -41,7 +60,15 @@ async def handle_chat(
         "hotel_options": "",
         "currency": payload.currency or "INR",
     }
+
     existing_session = await session.get(ChatSession, initial_state["session_id"])
+    user_email = ""
+    if credentials:
+        user_email = extracter(
+            key=SECRET_KEY, algo=ALGORITHM, token=credentials.credentials
+        )
+    else:
+        raise HTTPException(status_code=401, detail="Authentication required")
     if not existing_session:
         record = ChatSession(
             origin=initial_state["origin"],
@@ -51,6 +78,7 @@ async def handle_chat(
             budget=initial_state["budget"],
             guest_count=initial_state["guest_count"],
             id=initial_state["session_id"],
+            user_email=user_email,
         )
         session.add(record)
         await session.commit()
@@ -116,8 +144,22 @@ async def handle_chat(
 
 
 @router.get("/sessions")
-async def get_all_sessions(session: AsyncSession = Depends(get_session)):
-    statement = select(ChatSession).order_by(col(ChatSession.created_at).desc())
+async def get_all_sessions(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    session: AsyncSession = Depends(get_session),
+):
+    user_email = ""
+    if credentials:
+        user_email = extracter(
+            key=SECRET_KEY, algo=ALGORITHM, token=credentials.credentials
+        )
+    else:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    statement = (
+        select(ChatSession)
+        .where(ChatSession.user_email == user_email)
+        .order_by(col(ChatSession.created_at).desc())
+    )
     result = await session.exec(statement=statement)
     response_list = []
     for res in result:
