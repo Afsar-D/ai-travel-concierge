@@ -76,12 +76,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md mx-auto flex items-center justify-center text-[#D4B886] shadow-xl">
-            <Globe className="w-7 h-7 animate-pulse text-[#D4B886]" />
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md mx-auto flex items-center justify-center text-sky-400 shadow-xl">
+            <Globe className="w-7 h-7 animate-pulse text-sky-400" />
           </div>
           <div>
             <h1 className="font-extrabold text-3xl tracking-tight text-white uppercase drop-shadow-md">
-              ODYSSEY <span className="text-[#D4B886]">AI</span>
+              ODYSSEY <span className="text-sky-400">AI</span>
             </h1>
             <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mt-0.5">
               Exclusive Horizon & Journey Planner
@@ -204,13 +204,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 text-[#D4B886] animate-spin" />
+                <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
                 <span>Authenticating...</span>
               </>
             ) : (
               <>
                 <span>{authMode === 'signin' ? 'Sign In to Experience' : 'Create & Access Account'}</span>
-                <ArrowRight className="w-4 h-4 text-[#D4B886]" />
+                <ArrowRight className="w-4 h-4 text-sky-400" />
               </>
             )}
           </button>

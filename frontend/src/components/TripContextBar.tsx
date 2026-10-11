@@ -55,7 +55,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
         <div className="flex items-center space-x-2 bg-slate-50 dark:bg-[#1E2638] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-inner flex-1 min-w-[280px]">
           {/* Origin */}
           <div className="flex items-center space-x-2 px-3 py-1.5 flex-1">
-            <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
             <div className="flex flex-col flex-1">
               <span className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-400 tracking-wider">Origin</span>
               <input
@@ -99,7 +99,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
             onClick={() => setShowDatePicker(!showDatePicker)}
             className="flex items-center space-x-3 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-all text-xs font-semibold text-slate-900 dark:text-slate-100"
           >
-            <CalendarIcon className="w-4 h-4 text-[#D4AF37]" />
+            <CalendarIcon className="w-4 h-4 text-sky-400" />
             <div className="flex flex-col text-left">
               <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Dates & Duration</span>
               <span className="text-xs font-semibold">
@@ -113,7 +113,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
             <div className="absolute top-full mt-2 left-0 z-50 p-4 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200 dark:border-slate-700 shadow-xl w-72 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-serif font-bold text-slate-900 dark:text-slate-100">Select Travel Dates</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38E46] dark:text-[#D4AF37] font-semibold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 font-semibold">
                   {durationDays} Days Total
                 </span>
               </div>
@@ -124,7 +124,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
                     type="date"
                     value={trip.start_date}
                     onChange={(e) => onUpdateTrip({ start_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400"
                   />
                 </div>
                 <div>
@@ -133,7 +133,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
                     type="date"
                     value={trip.end_date}
                     onChange={(e) => onUpdateTrip({ end_date: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400"
                   />
                 </div>
               </div>
@@ -153,7 +153,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
             onClick={() => setShowGuestsPopover(!showGuestsPopover)}
             className="flex items-center space-x-3 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-all text-xs font-semibold text-slate-900 dark:text-slate-100"
           >
-            <Users className="w-4 h-4 text-[#D4AF37]" />
+            <Users className="w-4 h-4 text-sky-400" />
             <div className="flex flex-col text-left">
               <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Travelers</span>
               <span className="text-xs font-semibold">{trip.guest_count} {trip.guest_count === 1 ? 'Guest' : 'Guests'}</span>
@@ -196,7 +196,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
                     }}
                     className={`py-1.5 px-2 rounded-xl text-xs font-medium border text-center transition-all ${
                       trip.guest_count === preset.count
-                        ? 'bg-[#F5F2EB] dark:bg-[#1E2638] border-[#D4AF37] text-[#B38E46] dark:text-[#D4AF37]'
+                        ? 'bg-sky-50 dark:bg-sky-500/10 border-sky-400 text-sky-600 dark:text-sky-400'
                         : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }`}
                   >
@@ -224,11 +224,11 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
                 onClick={() => onUpdateTrip({ budget: tier })}
                 className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 ${
                   isSelected
-                    ? 'bg-white dark:bg-[#141A26] text-[#B38E46] dark:text-[#D4AF37] shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                    ? 'bg-white dark:bg-[#141A26] text-sky-600 dark:text-sky-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                {tier === 'high' && <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />}
+                {tier === 'high' && <Crown className="w-3.5 h-3.5 text-sky-400" />}
                 <span>{labels[tier]}</span>
               </button>
             );
@@ -239,7 +239,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
         <button
           onClick={onGenerate}
           disabled={isLoading}
-          className="flex items-center justify-center space-x-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B38E46] text-white font-semibold text-xs shadow-md shadow-[#D4AF37]/20 hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
+          className="flex items-center justify-center space-x-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold text-xs shadow-md shadow-sky-500/20 hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
         >
           {isLoading ? (
             <>

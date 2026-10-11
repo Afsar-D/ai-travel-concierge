@@ -63,8 +63,8 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
       {/* Header */}
       <div>
         <div className="flex items-center space-x-2">
-          <span className="text-[10px] uppercase font-semibold text-[#D4AF37] tracking-widest">Curated Inventory</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+          <span className="text-[10px] uppercase font-semibold text-sky-400 tracking-widest">Curated Inventory</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
           <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{destination} Options</span>
         </div>
         <h1 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -76,7 +76,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-            <Plane className="w-5 h-5 text-[#D4AF37]" />
+            <Plane className="w-5 h-5 text-sky-400" />
             <span>Recommended Flight Routes ({trip.origin} ➔ {destination})</span>
           </h2>
           <span className="text-xs text-slate-500">Prices aligned to {trip.budget} tier</span>
@@ -86,7 +86,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
           {mockFlights.map((flight) => (
             <div
               key={flight.id}
-              className="p-5 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 hover:border-[#D4AF37] transition-colors"
+              className="p-5 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 hover:border-sky-400 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -95,7 +95,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono">{flight.flightNumber}</span>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-[#D4AF37]/15 text-[#B38E46] dark:text-[#D4AF37] font-semibold text-xs">
+                <span className="px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 font-semibold text-xs">
                   {flight.class} Class
                 </span>
               </div>
@@ -107,8 +107,8 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] text-slate-400">{flight.duration}</span>
-                  <div className="w-20 h-0.5 bg-[#D4AF37] relative my-1">
-                    <Plane className="w-3 h-3 text-[#D4AF37] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  <div className="w-20 h-0.5 bg-sky-400 relative my-1">
+                    <Plane className="w-3 h-3 text-sky-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
                   <span className="text-[9px] text-emerald-600 font-semibold">{flight.stops}</span>
                 </div>
@@ -141,7 +141,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
       {/* Accommodations Section */}
       <div className="space-y-4">
         <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-          <Building className="w-5 h-5 text-[#D4AF37]" />
+          <Building className="w-5 h-5 text-sky-400" />
           <span>Selected Stays in {destination}</span>
         </h2>
 
@@ -158,7 +158,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 {hotel.badge && (
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0F172A]/80 backdrop-blur-md text-[#D4AF37] font-semibold text-[10px] tracking-wide">
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0F172A]/80 backdrop-blur-md text-sky-400 font-semibold text-[10px] tracking-wide">
                     {hotel.badge}
                   </span>
                 )}
@@ -200,7 +200,7 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
                     href={`https://www.google.com/travel/hotels?q=${encodeURIComponent(hotel.name + ' ' + destination)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 rounded-xl bg-[#D4AF37] text-white text-xs font-semibold hover:bg-[#B38E46] transition-colors flex items-center space-x-1"
+                    className="px-4 py-2 rounded-xl bg-sky-500 text-white text-xs font-semibold hover:bg-sky-400 transition-colors flex items-center space-x-1"
                   >
                     <span>View Property</span>
                     <ExternalLink className="w-3.5 h-3.5" />

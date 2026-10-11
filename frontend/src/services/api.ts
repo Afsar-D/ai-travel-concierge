@@ -19,6 +19,9 @@ export async function loginUser(email: string, password: string): Promise<UserPr
   });
 
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new Error('Backend server is not running or unreachable (502 Bad Gateway). Please start the backend service.');
+    }
     const errorData = await response.json().catch(() => ({ detail: 'Login failed' }));
     throw new Error(errorData.detail || 'Invalid email or password');
   }
@@ -37,6 +40,9 @@ export async function registerUser(name: string, email: string, password: string
   });
 
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new Error('Backend server is not running or unreachable (502 Bad Gateway). Please start the backend service.');
+    }
     const errorData = await response.json().catch(() => ({ detail: 'Registration failed' }));
     throw new Error(errorData.detail || 'Registration failed');
   }
@@ -123,6 +129,9 @@ export async function sendChatMessage(
   const latencyMs = Math.round(endTime - startTime);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      notifyAuthError('Your session has expired while chatting with Concierge. Please sign in again.');
+    }
     const errorText = await response.text().catch(() => 'Unknown network error');
     throw new Error(`Backend request failed (${response.status}): ${errorText}`);
   }
@@ -179,15 +188,34 @@ export async function fetchSessionInventory(sessionId: string): Promise<{ flight
   }
 }
 
+export function notifyAuthError(message?: string) {
+  try {
+    localStorage.removeItem('odyssey_token');
+    localStorage.removeItem('odyssey_user');
+    window.dispatchEvent(new CustomEvent('odyssey_auth_error', {
+      detail: {
+        statusCode: 401,
+        message: message || 'Your security session has expired. Please sign in again.'
+      }
+    }));
+  } catch {}
+}
+
 export async function fetchUserSessions(): Promise<TripState[]> {
   try {
     const token = localStorage.getItem('odyssey_token');
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    if (!token) return [];
+
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`
+    };
     const res = await fetch('/api/chat/sessions', { headers });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      if (res.status === 401) {
+        notifyAuthError('Your security session has expired. Please sign in again to access your saved trips.');
+      }
+      return [];
+    }
     const sessions = await res.json();
     return sessions.map((s: any) => ({
       id: s.id,

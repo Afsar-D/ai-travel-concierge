@@ -264,7 +264,7 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
           <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-6">
             <button
               onClick={onOpenCreateModal}
-              className="w-24 h-24 rounded-full bg-white/10 border-2 border-dashed border-[#D4B886] flex items-center justify-center text-[#D4B886] hover:bg-white/20 hover:scale-105 transition-all duration-300 shadow-2xl group"
+              className="w-24 h-24 rounded-full bg-white/10 border-2 border-dashed border-sky-400/60 flex items-center justify-center text-sky-400 hover:bg-white/20 hover:scale-105 transition-all duration-300 shadow-2xl group"
             >
               <Plus className="w-10 h-10 group-hover:rotate-90 transition-transform duration-300" />
             </button>
@@ -282,7 +282,7 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
               onClick={onOpenCreateModal}
               className="px-6 py-3 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs shadow-xl backdrop-blur-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center space-x-2"
             >
-              <Sparkles className="w-4 h-4 text-[#D4B886]" />
+              <Sparkles className="w-4 h-4 text-sky-400" />
               <span>Create New Trip</span>
             </button>
           </div>
@@ -480,7 +480,7 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
           className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-slate-900/85 hover:bg-slate-900 border border-white/20 backdrop-blur-2xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.8)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center space-x-2 group"
           title="Open AI Concierge Chat"
         >
-          <MessageSquare className="w-5 h-5 text-[#D4B886] group-hover:scale-110 transition-transform duration-300" />
+          <MessageSquare className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform duration-300" />
           <span className="font-bold text-xs pr-1">Concierge AI</span>
         </button>
       </footer>

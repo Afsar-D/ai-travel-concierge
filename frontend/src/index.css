@@ -5,9 +5,9 @@
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    /* Minimalist Platinum Champagne Glass Palette */
-    --color-accent: #D4B886;
-    --color-accent-hover: #C5A059;
+    /* Modern Electric Sky / Cyan Palette */
+    --color-accent: #38BDF8;
+    --color-accent-hover: #0EA5E9;
     --color-bg-dark: #080B11;
     --color-surface-dark: #121722;
   }

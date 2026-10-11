@@ -268,7 +268,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                 {/* Weather Alignment Banner */}
                 <div className="p-4 rounded-3xl glass-panel-dark border border-white/10 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-[#D4B886] font-mono font-bold text-xs">
+                    <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-sky-400 font-mono font-bold text-xs">
                       D{activeDay?.dayNumber || 1}
                     </div>
                     <div>
@@ -282,7 +282,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                   </div>
 
                   <div className="px-3.5 py-1.5 rounded-xl border border-white/15 bg-white/10 text-xs font-semibold flex items-center space-x-2 text-slate-200">
-                    {activeDay?.weather.isRainy ? <CloudRain className="w-4 h-4 text-[#D4B886]" /> : <Sun className="w-4 h-4 text-[#D4B886]" />}
+                    {activeDay?.weather.isRainy ? <CloudRain className="w-4 h-4 text-sky-400" /> : <Sun className="w-4 h-4 text-sky-400" />}
                     <span>{activeDay?.weather.isRainy ? '☔ Weather-Safe Indoor Plan' : '☀️ Clear Outdoor Plan'}</span>
                   </div>
                 </div>
@@ -296,8 +296,8 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 rounded-2xl bg-[#D4B886]/15 border border-[#D4B886]/30 flex items-center justify-center text-[#D4B886] shrink-0 font-bold text-xs shadow-md">
-                            <MapPin className="w-5 h-5 text-[#D4B886]" />
+                          <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0 font-bold text-xs shadow-md">
+                            <MapPin className="w-5 h-5 text-sky-400" />
                           </div>
                           <div className="space-y-1.5">
                             <div className="flex items-center space-x-2">
@@ -311,7 +311,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                               )}
                             </div>
 
-                            <h4 className="font-bold text-lg text-white group-hover:text-[#D4B886] transition-colors duration-300 leading-snug">
+                            <h4 className="font-bold text-lg text-white group-hover:text-sky-400 transition-colors duration-300 leading-snug">
                               {act.title}
                             </h4>
 
@@ -321,12 +321,12 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
 
                             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium pt-2">
                               <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10">
-                                <MapPin className="w-3.5 h-3.5 text-[#D4B886]" />
+                                <MapPin className="w-3.5 h-3.5 text-sky-400" />
                                 <span className="text-white font-medium">{act.location}</span>
                               </span>
 
-                              <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-[#D4B886]/15 border border-[#D4B886]/30 text-[#D4B886] font-mono font-bold">
-                                <DollarSign className="w-3.5 h-3.5 text-[#D4B886]" />
+                              <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-mono font-bold">
+                                <DollarSign className="w-3.5 h-3.5 text-sky-400" />
                                 <span>Budget: {act.estimatedCost}</span>
                               </span>
                             </div>
@@ -356,7 +356,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                 <div className="p-6 rounded-3xl glass-panel-dark border border-white/10 space-y-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <span className="font-bold text-xs uppercase tracking-wider text-slate-300">Estimated Budget Tracker</span>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#D4B886] font-semibold uppercase border border-white/20">
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-sky-400 font-semibold uppercase border border-white/20">
                       {trip.budget} Tier
                     </span>
                   </div>
@@ -365,7 +365,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     {/* Est. Daily Budget */}
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400 font-medium">Est. Daily Budget (Food & Activities)</span>
-                      <span className="text-[#D4B886] font-mono font-bold text-sm">
+                      <span className="text-sky-400 font-mono font-bold text-sm">
                         ₹{budgetMetrics.estimatedDailySpend.toLocaleString('en-IN')}/day
                       </span>
                     </div>
@@ -389,7 +389,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     {/* Total Budget */}
                     <div className="flex justify-between items-center text-xs pt-1">
                       <span className="text-slate-200 font-bold uppercase tracking-wider">Total Estimated Budget</span>
-                      <span className="text-white font-mono font-extrabold text-base text-[#D4B886]">
+                      <span className="text-white font-mono font-extrabold text-base text-sky-400">
                         ₹{budgetMetrics.grandTotal.toLocaleString('en-IN')} INR
                       </span>
                     </div>
@@ -397,7 +397,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     {/* Budget progress bar */}
                     <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-white/40 to-[#D4B886] transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-white/40 to-sky-400 transition-all duration-500"
                         style={{ width: `${Math.min(100, (budgetMetrics.grandTotal / (trip.budget === 'high' ? 75000 : trip.budget === 'medium' ? 35000 : 15000)) * 100)}%` }}
                       />
                     </div>
@@ -405,7 +405,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-[11px] text-slate-300 space-y-1">
                     <div className="flex items-center space-x-1.5 font-semibold text-white">
-                      <ShieldCheck className="w-4 h-4 text-[#D4B886]" />
+                      <ShieldCheck className="w-4 h-4 text-sky-400" />
                       <span>Budget Breakdown Guide</span>
                     </div>
                     <p className="text-slate-400 text-[11px] leading-relaxed">
@@ -434,7 +434,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-slate-400">Session ID</span>
-                      <span className="font-mono text-[10px] text-[#D4B886]">{trip.session_id}</span>
+                      <span className="font-mono text-[10px] text-sky-400">{trip.session_id}</span>
                     </div>
                   </div>
                 </div>
@@ -453,7 +453,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center space-x-2">
-                  <Plane className="w-5 h-5 text-[#D4B886]" />
+                  <Plane className="w-5 h-5 text-sky-400" />
                   <h2 className="font-bold text-lg text-white">
                     Flight Recommendations ({trip.origin} ➔ {trip.destination})
                   </h2>
@@ -471,10 +471,10 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                       className="p-5 rounded-3xl glass-panel-dark border border-white/10 hover:border-white/25 transition-all duration-300 space-y-4 shadow-lg group"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-white group-hover:text-[#D4B886] transition-colors duration-300">
+                        <span className="font-bold text-sm text-white group-hover:text-sky-400 transition-colors duration-300">
                           {flight.airline}
                         </span>
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#D4B886] font-bold border border-white/20">
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-sky-400 font-bold border border-white/20">
                           {flight.stops}
                         </span>
                       </div>
@@ -489,7 +489,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
 
                         <div className="text-center px-2">
                           <span className="text-[10px] text-slate-400 block">{flight.duration}</span>
-                          <Plane className="w-4 h-4 text-[#D4B886] mx-auto my-1 transform rotate-90" />
+                          <Plane className="w-4 h-4 text-sky-400 mx-auto my-1 transform rotate-90" />
                         </div>
 
                         <div className="text-right">
@@ -501,7 +501,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                       </div>
 
                       <div className="flex justify-between items-center pt-1">
-                        <span className="font-mono font-bold text-base text-[#D4B886]">{flight.price}</span>
+                        <span className="font-mono font-bold text-base text-sky-400">{flight.price}</span>
                         <a
                           href={`https://www.google.com/travel/flights?q=flights+from+${encodeURIComponent(trip.origin)}+to+${encodeURIComponent(trip.destination)}`}
                           target="_blank"
@@ -509,7 +509,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                           className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1"
                         >
                           <span>Book Flight</span>
-                          <ExternalLink className="w-3 h-3 text-[#D4B886]" />
+                          <ExternalLink className="w-3 h-3 text-sky-400" />
                         </a>
                       </div>
                     </div>
@@ -521,7 +521,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                   <p className="text-xs text-slate-300">
                     No explicit flight search keywords were detected in the prompt, or direct flight options are pending.
                   </p>
-                  <span className="text-[11px] text-[#D4B886] block font-mono">
+                  <span className="text-[11px] text-sky-400 block font-mono">
                     Ask Concierge AI: "Show me flights from {trip.origin} to {trip.destination}" to query SerpApi.
                   </span>
                 </div>
@@ -532,7 +532,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center space-x-2">
-                  <Building2 className="w-5 h-5 text-[#D4B886]" />
+                  <Building2 className="w-5 h-5 text-sky-400" />
                   <h2 className="font-bold text-lg text-white">
                     Hotel & Stay Recommendations ({trip.destination})
                   </h2>
@@ -551,11 +551,11 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-base text-white group-hover:text-[#D4B886] transition-colors duration-300 leading-snug">
+                          <h3 className="font-bold text-base text-white group-hover:text-sky-400 transition-colors duration-300 leading-snug">
                             {hotel.name}
                           </h3>
-                          <div className="flex items-center space-x-1 text-[#D4B886] font-bold text-xs bg-white/10 px-2 py-0.5 rounded-lg border border-white/15 shrink-0">
-                            <Star className="w-3.5 h-3.5 fill-[#D4B886]" />
+                          <div className="flex items-center space-x-1 text-sky-400 font-bold text-xs bg-white/10 px-2 py-0.5 rounded-lg border border-white/15 shrink-0">
+                            <Star className="w-3.5 h-3.5 fill-sky-400" />
                             <span>{hotel.rating || 4.5}</span>
                           </div>
                         </div>
@@ -570,7 +570,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                               key={aIdx} 
                               className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300 flex items-center space-x-1"
                             >
-                              <Wifi className="w-2.5 h-2.5 text-[#D4B886]" />
+                              <Wifi className="w-2.5 h-2.5 text-sky-400" />
                               <span>{amenity}</span>
                             </span>
                           ))}
@@ -579,7 +579,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
 
                       <div className="flex justify-between items-center pt-3 border-t border-white/10">
                         <div>
-                          <span className="font-mono font-bold text-base text-[#D4B886] block">{hotel.pricePerNight}</span>
+                          <span className="font-mono font-bold text-base text-sky-400 block">{hotel.pricePerNight}</span>
                           <span className="text-[9px] text-slate-400 block uppercase tracking-wider">Per Night</span>
                         </div>
 
@@ -590,7 +590,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
                           className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1"
                         >
                           <span>View Hotel</span>
-                          <ExternalLink className="w-3 h-3 text-[#D4B886]" />
+                          <ExternalLink className="w-3 h-3 text-sky-400" />
                         </a>
                       </div>
                     </div>
@@ -617,7 +617,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
         className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-slate-900/85 hover:bg-slate-900 border border-white/20 backdrop-blur-2xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.8)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center space-x-2 group"
         title="Open AI Concierge Chat"
       >
-        <MessageSquare className="w-5 h-5 text-[#D4B886] group-hover:scale-110 transition-transform duration-300" />
+        <MessageSquare className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform duration-300" />
         <span className="font-bold text-xs pr-1">Concierge AI</span>
       </button>
 

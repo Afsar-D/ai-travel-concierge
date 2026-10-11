@@ -8,6 +8,9 @@ import { ConciergeChatModal } from './components/ConciergeChatModal';
 import { CreateTripModal } from './components/CreateTripModal';
 import { ExportModal } from './components/ExportModal';
 
+import { AuthErrorPage } from './components/AuthErrorPage';
+import { NotFound404Page } from './components/NotFound404Page';
+
 import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
 import { fetchUserSessions, deleteUserSession } from './services/api';
@@ -16,6 +19,8 @@ import { getDestinationBackgroundImage } from './utils/themeUtils';
 export function App() {
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
+      const token = localStorage.getItem('odyssey_token');
+      if (!token) return null;
       const stored = localStorage.getItem('odyssey_user');
       return stored ? JSON.parse(stored) : null;
     } catch {
@@ -23,7 +28,45 @@ export function App() {
     }
   });
 
-  const [viewMode, setViewMode] = useState<'dashboard' | 'planDetail'>('dashboard');
+  const [authError, setAuthError] = useState<{ message?: string; statusCode?: number } | null>(null);
+
+  const [viewMode, setViewMode] = useState<'dashboard' | 'planDetail' | '404'>(() => {
+    try {
+      const path = window.location.pathname;
+      if (path === '/404' || (path !== '/' && path !== '' && path !== '/index.html')) {
+        return '404';
+      }
+    } catch {}
+    return 'dashboard';
+  });
+
+  useEffect(() => {
+    const handleAuthErrorEvent = (e: any) => {
+      setAuthError({
+        statusCode: e.detail?.statusCode || 401,
+        message: e.detail?.message || 'Your security session has expired. Please sign in again.'
+      });
+      setUser(null);
+    };
+
+    const handlePopState = () => {
+      try {
+        const path = window.location.pathname;
+        if (path === '/404') {
+          setViewMode('404');
+        } else {
+          setViewMode('dashboard');
+        }
+      } catch {}
+    };
+
+    window.addEventListener('odyssey_auth_error', handleAuthErrorEvent);
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('odyssey_auth_error', handleAuthErrorEvent);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -86,6 +129,10 @@ export function App() {
 
       fetchUserSessions()
         .then(remoteTrips => {
+          if (!localStorage.getItem('odyssey_token')) {
+            setUser(null);
+            return;
+          }
           if (remoteTrips && remoteTrips.length > 0) {
             // Pre-load images in background for instant presentation
             remoteTrips.forEach(rt => {
@@ -248,7 +295,7 @@ export function App() {
       particleCount: 60,
       spread: 70,
       origin: { y: 0.8 },
-      colors: ['#D4AF37', '#3B82F6', '#FFFFFF'],
+      colors: ['#38BDF8', '#3B82F6', '#FFFFFF'],
     });
   };
 
@@ -301,6 +348,43 @@ export function App() {
     });
   };
 
+  if (authError) {
+    return (
+      <AuthErrorPage
+        statusCode={authError.statusCode}
+        message={authError.message}
+        onLoginAgain={() => {
+          setAuthError(null);
+          setUser(null);
+          try {
+            localStorage.removeItem('odyssey_token');
+            localStorage.removeItem('odyssey_user');
+          } catch {}
+        }}
+      />
+    );
+  }
+
+  if (viewMode === '404') {
+    return (
+      <NotFound404Page
+        onBackToDashboard={() => {
+          try {
+            window.history.pushState({}, '', '/');
+          } catch {}
+          setViewMode('dashboard');
+        }}
+        onCreateNewTrip={() => {
+          try {
+            window.history.pushState({}, '', '/');
+          } catch {}
+          setViewMode('dashboard');
+          setIsCreateOpen(true);
+        }}
+      />
+    );
+  }
+
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -309,22 +393,22 @@ export function App() {
     return (
       <div className="fixed inset-0 z-50 bg-[#06080E] text-white flex flex-col items-center justify-center font-sans select-none overflow-hidden">
         {/* Ambient Radial Background Glow */}
-        <div className="absolute w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute w-96 h-96 rounded-full bg-sky-500/10 blur-[120px] pointer-events-none animate-pulse" />
         <div className="absolute w-64 h-64 rounded-full bg-indigo-600/10 blur-[100px] pointer-events-none" />
 
         {/* Outer Ring & Spinning Globe Icon */}
         <div className="relative flex items-center justify-center mb-8">
-          <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#D4AF37]/40 animate-spin" style={{ animationDuration: '8s' }} />
-          <div className="absolute w-16 h-16 rounded-full border-2 border-t-[#D4AF37] border-r-transparent border-b-indigo-500 border-l-transparent animate-spin" style={{ animationDuration: '2s' }} />
+          <div className="w-24 h-24 rounded-full border-2 border-dashed border-sky-400/40 animate-spin" style={{ animationDuration: '8s' }} />
+          <div className="absolute w-16 h-16 rounded-full border-2 border-t-sky-400 border-r-transparent border-b-indigo-500 border-l-transparent animate-spin" style={{ animationDuration: '2s' }} />
           <div className="absolute w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl">
-            <Globe className="w-6 h-6 text-[#D4AF37] animate-pulse" />
+            <Globe className="w-6 h-6 text-sky-400 animate-pulse" />
           </div>
         </div>
 
         {/* Branding & Status */}
         <div className="text-center space-y-3 z-10 max-w-sm px-6">
           <h1 className="font-extrabold text-3xl tracking-widest text-white uppercase drop-shadow-lg">
-            ODYSSEY <span className="text-[#D4AF37]">AI</span>
+            ODYSSEY <span className="text-sky-400">AI</span>
           </h1>
           <p className="text-xs tracking-widest text-slate-400 uppercase font-mono">
             Curating your luxury itineraries...
@@ -332,7 +416,7 @@ export function App() {
 
           {/* Shimmer Loading Bar */}
           <div className="w-48 h-1 bg-white/10 rounded-full mx-auto overflow-hidden relative mt-4">
-            <div className="absolute inset-y-0 bg-gradient-to-r from-[#D4AF37] via-amber-200 to-[#D4AF37] w-full animate-pulse rounded-full" />
+            <div className="absolute inset-y-0 bg-gradient-to-r from-sky-400 via-sky-200 to-sky-400 w-full animate-pulse rounded-full" />
           </div>
         </div>
       </div>
@@ -340,7 +424,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-slate-950 text-white font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37]/30">
+    <div className="min-h-screen w-screen bg-slate-950 text-white font-sans antialiased overflow-x-hidden selection:bg-sky-500/30">
       
       {viewMode === 'dashboard' ? (
         <TripDashboard
@@ -355,9 +439,9 @@ export function App() {
           onBookmarkTrip={handleBookmarkTrip}
           onDeleteTrip={handleDeleteTrip}
         />
-      ) : (
+      ) : activeTrip ? (
         <TripPlanView
-          trip={activeTrip!}
+          trip={activeTrip}
           days={itineraryDays}
           selectedDayIndex={selectedTimelineDayIndex}
           onSelectDayIndex={setSelectedTimelineDayIndex}
@@ -366,6 +450,15 @@ export function App() {
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
           onDeleteTrip={handleDeleteTrip}
+        />
+      ) : (
+        <NotFound404Page
+          customMessage="We could not locate this itinerary. It may have been removed or archived."
+          onBackToDashboard={() => setViewMode('dashboard')}
+          onCreateNewTrip={() => {
+            setViewMode('dashboard');
+            setIsCreateOpen(true);
+          }}
         />
       )}
 

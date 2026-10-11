@@ -66,7 +66,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B38E46] flex items-center justify-center text-white shadow-xl shadow-[#D4AF37]/20 mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-xl shadow-sky-500/20 mb-4">
               <Compass className="w-8 h-8 animate-spin" style={{ animationDuration: '12s' }} />
             </div>
             <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -85,10 +85,10 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                   <button
                     key={idx}
                     onClick={() => onSendMessage(prompt)}
-                    className="p-3 rounded-xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 hover:border-[#D4AF37] dark:hover:border-[#D4AF37] transition-all shadow-sm flex items-center justify-between group"
+                    className="p-3 rounded-xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 hover:border-sky-400 dark:hover:border-sky-400 transition-all shadow-sm flex items-center justify-between group"
                   >
                     <span>{prompt}</span>
-                    <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Sparkles className="w-3.5 h-3.5 text-sky-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
@@ -107,7 +107,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
                   msg.sender === 'user'
                     ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                    : 'bg-[#D4AF37] text-white shadow-sm'
+                    : 'bg-sky-500 text-white shadow-sm'
                 }`}
               >
                 {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -134,8 +134,8 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                 </div>
 
                 {msg.status === 'sending' && (
-                  <div className="mt-2 flex items-center space-x-1.5 text-[10px] text-[#D4AF37]">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-ping" />
+                  <div className="mt-2 flex items-center space-x-1.5 text-[10px] text-sky-400">
+                    <div className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
                     <span>Processing live weather & route data...</span>
                   </div>
                 )}
@@ -147,15 +147,15 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
         {/* Loading Indicator */}
         {isLoading && (
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-[#D4AF37] flex items-center justify-center text-white shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-sky-500 flex items-center justify-center text-white shrink-0 shadow-sm">
               <Bot className="w-4 h-4" />
             </div>
             <div className="bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm text-xs">
               <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
                 <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 ml-2">
                   Synthesizing weather-aligned itinerary...
@@ -200,12 +200,12 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
               }
             }}
             placeholder={`Ask SOJOURN about ${trip.destination}, dining, transport, or weather...`}
-            className="w-full pl-4 pr-12 py-3 rounded-2xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] transition-all resize-none"
+            className="w-full pl-4 pr-12 py-3 rounded-2xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 dark:focus:border-sky-400 transition-all resize-none"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="absolute right-2 p-2 rounded-xl bg-[#D4AF37] text-white hover:bg-[#B38E46] transition-all disabled:opacity-40 disabled:hover:bg-[#D4AF37] shadow-sm"
+            className="absolute right-2 p-2 rounded-xl bg-sky-500 text-white hover:bg-sky-400 transition-all disabled:opacity-40 disabled:hover:bg-sky-500 shadow-sm"
           >
             <Send className="w-4 h-4" />
           </button>

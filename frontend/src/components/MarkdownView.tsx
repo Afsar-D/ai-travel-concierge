@@ -28,7 +28,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content }) => {
           }
           if (level === 2) {
             return (
-              <h3 key={bIdx} className="font-bold text-sm text-[#D4B886] pt-1">
+              <h3 key={bIdx} className="font-bold text-sm text-sky-400 pt-1">
                 {renderInlineMarkdown(text)}
               </h3>
             );
@@ -60,7 +60,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content }) => {
                   <thead>
                     <tr className="border-b border-white/10 bg-white/10 text-white font-bold">
                       {headers.map((h, hIdx) => (
-                        <th key={hIdx} className="p-3 font-bold uppercase tracking-wider text-[#D4B886]">
+                        <th key={hIdx} className="p-3 font-bold uppercase tracking-wider text-sky-400">
                           {renderInlineMarkdown(h)}
                         </th>
                       ))}
@@ -99,7 +99,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content }) => {
                 const cleanItem = item.replace(/^[\*\-•]\s*/, '');
                 return (
                   <li key={iIdx} className="flex items-start space-x-2">
-                    <span className="text-[#D4B886] font-bold text-xs shrink-0">•</span>
+                    <span className="text-sky-400 font-bold text-xs shrink-0">•</span>
                     <span>{renderInlineMarkdown(cleanItem)}</span>
                   </li>
                 );

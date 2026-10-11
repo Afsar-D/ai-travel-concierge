@@ -107,8 +107,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#080B11] text-slate-900 dark:text-slate-100 flex flex-col font-sans relative overflow-hidden">
       
       {/* Ambient Floating Glow Orbs */}
-      <div className="ambient-glow-gold top-[-100px] left-1/2 -translate-x-1/2" />
-      <div className="ambient-glow-slate top-[600px] right-[-200px]" />
+      <div className="absolute w-[600px] h-[300px] rounded-full bg-sky-500/10 blur-[120px] pointer-events-none top-[-100px] left-1/2 -translate-x-1/2" />
+      <div className="absolute w-[500px] h-[300px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none top-[600px] right-[-200px]" />
 
       {/* 1. Floating Capsule Navigation Header */}
       <div className="fixed top-6 inset-x-0 z-50 flex justify-center px-4">
@@ -119,14 +119,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onClick={onLaunchConcierge}
             className="flex items-center space-x-3 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B38E46] flex items-center justify-center text-white shadow-md shadow-[#D4AF37]/20 group-hover:rotate-45 transition-transform duration-500">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:rotate-45 transition-transform duration-500">
               <Compass className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
               <span className="font-serif font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100">
                 SOJOURN
               </span>
-              <span className="text-[8px] uppercase tracking-widest font-semibold text-[#D4AF37] -mt-1">
+              <span className="text-[8px] uppercase tracking-widest font-semibold text-sky-400 -mt-1">
                 Luxury AI Concierge
               </span>
             </div>
@@ -134,9 +134,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Links */}
           <nav className="hidden sm:flex items-center space-x-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
-            <a href="#destinations" className="hover:text-[#D4AF37] transition-colors">Curated Stays</a>
-            <a href="#intelligence" className="hover:text-[#D4AF37] transition-colors">AI Intelligence</a>
-            <a href="#telemetry" className="hover:text-[#D4AF37] transition-colors">Telemetry</a>
+            <a href="#destinations" className="hover:text-sky-400 transition-colors">Curated Stays</a>
+            <a href="#intelligence" className="hover:text-sky-400 transition-colors">AI Intelligence</a>
+            <a href="#telemetry" className="hover:text-sky-400 transition-colors">Telemetry</a>
           </nav>
 
           {/* Action CTA */}
@@ -150,7 +150,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onLaunchConcierge}
               className="flex items-center space-x-2 px-5 py-2 rounded-full bg-[#0F172A] dark:bg-white text-white dark:text-slate-900 font-semibold text-xs shadow-md hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95 transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
               <span>Launch App</span>
             </button>
           </div>
@@ -175,7 +175,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           {/* Champagne Pill Badge */}
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md">
-            <Sparkle className="w-3.5 h-3.5 text-[#D4AF37] fill-[#D4AF37]" />
+            <Sparkle className="w-3.5 h-3.5 text-sky-400 fill-sky-400" />
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Next-Gen Multi-Agent Travel Intelligence
             </span>
@@ -184,7 +184,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Dramatic Serif Headline */}
           <h1 className="font-serif text-5xl sm:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 leading-[1.08]">
             Travel Beyond Boundaries. <br />
-            <span className="italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#B38E46]">
+            <span className="italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-300 to-cyan-400">
               Synthesized in Seconds.
             </span>
           </h1>
@@ -202,7 +202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Departure</label>
                 <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
                   <input
                     type="text"
                     value={trip.origin}
@@ -217,7 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 relative">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Destination</label>
-                  <button onClick={handleSwapCities} className="text-slate-400 hover:text-[#D4AF37] transition-colors" title="Swap">
+                  <button onClick={handleSwapCities} className="text-slate-400 hover:text-sky-400 transition-colors" title="Swap">
                     <ArrowLeftRight className="w-3 h-3" />
                   </button>
                 </div>
@@ -237,7 +237,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Dates</label>
                 <div className="flex items-center space-x-2">
-                  <CalendarIcon className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <CalendarIcon className="w-4 h-4 text-sky-400 shrink-0" />
                   <input
                     type="date"
                     value={trip.start_date}
@@ -251,7 +251,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Travelers</label>
                 <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <Users className="w-4 h-4 text-sky-400 shrink-0" />
                   <select
                     value={trip.guest_count}
                     onChange={(e) => onUpdateTrip({ guest_count: Number(e.target.value) })}
@@ -293,7 +293,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Action Button */}
             <button
               onClick={onLaunchConcierge}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#B38E46] text-white font-serif font-bold text-base shadow-xl shadow-[#D4AF37]/25 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center space-x-3"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-500 text-slate-950 font-serif font-bold text-base shadow-xl shadow-sky-500/25 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center space-x-3"
             >
               <span>Craft Personalized Itinerary</span>
               <ArrowRight className="w-4 h-4" />
@@ -310,7 +310,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200/80 dark:border-white/10 pb-6">
             <div>
-              <span className="text-[10px] uppercase font-bold text-[#D4AF37] tracking-widest block mb-2">Curated Journeys</span>
+              <span className="text-[10px] uppercase font-bold text-sky-400 tracking-widest block mb-2">Curated Journeys</span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
                 Explore Iconic Stays & Cities
               </h2>
@@ -339,7 +339,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   
                   {/* Top Badges */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-[10px] font-bold text-[#D4AF37] tracking-wider uppercase shadow-md">
+                    <span className="px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-[10px] font-bold text-sky-400 tracking-wider uppercase shadow-md">
                       {dest.tag}
                     </span>
                     <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-900 dark:text-slate-100 font-bold text-xs shadow-md">
@@ -351,7 +351,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   {/* Bottom Photo Overlay Info */}
                   <div className="absolute bottom-4 left-4 right-4 text-white">
                     <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest block">{dest.country}</span>
-                    <h3 className="font-serif font-bold text-2xl group-hover:text-[#D4AF37] transition-colors">{dest.name}</h3>
+                    <h3 className="font-serif font-bold text-2xl group-hover:text-sky-400 transition-colors">{dest.name}</h3>
                   </div>
                 </div>
 
@@ -363,7 +363,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-white/10 text-xs">
                     <span className="text-slate-500 dark:text-slate-400 font-semibold">{dest.weather}</span>
-                    <span className="font-semibold text-[#D4AF37] group-hover:translate-x-1 transition-transform flex items-center">
+                    <span className="font-semibold text-sky-400 group-hover:translate-x-1 transition-transform flex items-center">
                       Plan Trip <ChevronRight className="w-4 h-4 ml-0.5" />
                     </span>
                   </div>
@@ -380,7 +380,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-6xl mx-auto space-y-16">
           
           <div className="text-center max-w-2xl mx-auto space-y-4">
-            <span className="text-[10px] uppercase font-bold text-[#D4AF37] tracking-widest block">System Intelligence</span>
+            <span className="text-[10px] uppercase font-bold text-sky-400 tracking-widest block">System Intelligence</span>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
               Under the Hood: LangGraph & Weather Sync
             </h2>
@@ -468,7 +468,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       StateGraph State Machine Execution
                     </h3>
                     <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      LangGraph orchestrates node transitions from <code className="text-[#D4AF37]">START</code> ➔ <code className="text-[#D4AF37]">weather_node</code> ➔ <code className="text-[#D4AF37]">llm_node</code> ➔ <code className="text-[#D4AF37]">END</code>.
+                      LangGraph orchestrates node transitions from <code className="text-sky-400">START</code> ➔ <code className="text-sky-400">weather_node</code> ➔ <code className="text-sky-400">llm_node</code> ➔ <code className="text-sky-400">END</code>.
                     </p>
                   </div>
 
@@ -509,7 +509,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-400">
           
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">
               S
             </div>
             <span className="font-serif font-bold text-base text-white">SOJOURN</span>

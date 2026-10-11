@@ -14,7 +14,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase font-semibold text-[#D4AF37] tracking-widest">Developer Telemetry</span>
+            <span className="text-[10px] uppercase font-semibold text-sky-400 tracking-widest">Developer Telemetry</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -31,7 +31,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
       {/* LangGraph Visual State Machine Diagram */}
       <div className="p-6 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
         <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-          <Cpu className="w-4 h-4 text-[#D4AF37]" />
+          <Cpu className="w-4 h-4 text-sky-400" />
           <span>LangGraph State Graph Execution Topology</span>
         </h3>
 
@@ -45,14 +45,14 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
             <span className="text-[10px] font-semibold text-slate-400 mt-2">HTTP Trigger</span>
           </div>
 
-          <div className="w-8 h-0.5 bg-[#D4AF37] relative hidden sm:block">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] absolute top-1/2 right-0 -translate-y-1/2" />
+          <div className="w-8 h-0.5 bg-sky-400 relative hidden sm:block">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 absolute top-1/2 right-0 -translate-y-1/2" />
           </div>
 
           {/* weather_node */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-amber-500/20 border border-[#D4AF37] flex flex-col items-center justify-center text-xs font-bold text-slate-900 dark:text-slate-100 shadow-md">
-              <Zap className="w-4 h-4 text-[#D4AF37] mb-0.5" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-sky-400 flex flex-col items-center justify-center text-xs font-bold text-slate-900 dark:text-slate-100 shadow-md">
+              <Zap className="w-4 h-4 text-sky-400 mb-0.5" />
               <span className="text-[10px] font-mono">weather</span>
             </div>
             <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-2">
@@ -60,8 +60,8 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
             </span>
           </div>
 
-          <div className="w-8 h-0.5 bg-[#D4AF37] relative hidden sm:block">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] absolute top-1/2 right-0 -translate-y-1/2" />
+          <div className="w-8 h-0.5 bg-sky-400 relative hidden sm:block">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 absolute top-1/2 right-0 -translate-y-1/2" />
           </div>
 
           {/* llm_node */}
@@ -75,8 +75,8 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
             </span>
           </div>
 
-          <div className="w-8 h-0.5 bg-[#D4AF37] relative hidden sm:block">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] absolute top-1/2 right-0 -translate-y-1/2" />
+          <div className="w-8 h-0.5 bg-sky-400 relative hidden sm:block">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 absolute top-1/2 right-0 -translate-y-1/2" />
           </div>
 
           {/* END Node */}
@@ -97,7 +97,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
         <div className="p-5 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
             <span className="font-semibold">RAM Cache Engine</span>
-            <Database className="w-4 h-4 text-[#D4AF37]" />
+            <Database className="w-4 h-4 text-sky-400" />
           </div>
           <div className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
             <span>Upstash Redis</span>
@@ -114,7 +114,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
         <div className="p-5 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
             <span className="font-semibold">Last Trip Generation Time</span>
-            <Clock className="w-4 h-4 text-[#D4AF37]" />
+            <Clock className="w-4 h-4 text-sky-400" />
           </div>
           <div className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100 font-mono">
             {telemetry.totalLatencyMs > 0 ? `${telemetry.totalLatencyMs} ms` : '964 ms'}
@@ -128,7 +128,7 @@ export const TelemetryDrawer: React.FC<TelemetryDrawerProps> = ({ telemetry }) =
         <div className="p-5 rounded-2xl bg-white dark:bg-[#141A26] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
             <span className="font-semibold">Session Persistence</span>
-            <Server className="w-4 h-4 text-[#D4AF37]" />
+            <Server className="w-4 h-4 text-sky-400" />
           </div>
           <div className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100">
             PostgreSQL / Supabase

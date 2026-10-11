@@ -44,17 +44,17 @@ export function getTripTheme(destination: string = '', country: string = ''): Tr
   }
   
   if (d.includes('kerala') || d.includes('india') || d.includes('jungle') || d.includes('backwater')) {
-    // Warm Amber & Spice Gold Theme
+    // Coastal Teal & Spice Cyan Theme
     return {
-      primaryHex: '#EAB308',
+      primaryHex: '#06B6D4',
       glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-      badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
-      badgeText: 'text-amber-400',
-      activeBorder: 'border-amber-500/60 shadow-xl shadow-amber-500/15 ring-1 ring-amber-500/30',
-      buttonAccent: 'bg-[#EAB308] hover:bg-[#FACC15] text-slate-950 font-extrabold shadow-xl shadow-[#EAB308]/25',
-      iconColor: 'text-[#EAB308]',
-      tagColor: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
-      radialFlare: 'bg-amber-500/10'
+      badgeBg: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300',
+      badgeText: 'text-cyan-400',
+      activeBorder: 'border-cyan-500/60 shadow-xl shadow-cyan-500/15 ring-1 ring-cyan-500/30',
+      buttonAccent: 'bg-[#06B6D4] hover:bg-[#22D3EE] text-slate-950 font-extrabold shadow-xl shadow-[#06B6D4]/25',
+      iconColor: 'text-[#06B6D4]',
+      tagColor: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+      radialFlare: 'bg-cyan-500/10'
     };
   }
   
@@ -73,17 +73,17 @@ export function getTripTheme(destination: string = '', country: string = ''): Tr
     };
   }
   
-  // Default Minimal Champagne & Crystal Dark Theme
+  // Default Modern Electric Sky / Cyan Theme
   return {
-    primaryHex: '#D4B886',
+    primaryHex: '#38BDF8',
     glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-    badgeBg: 'bg-[#D4B886]/15 border-[#D4B886]/30 text-[#E2CB9F]',
-    badgeText: 'text-[#D4B886]',
-    activeBorder: 'border-[#D4B886]/60 shadow-xl shadow-[#D4B886]/15 ring-1 ring-[#D4B886]/30',
-    buttonAccent: 'bg-[#D4B886] hover:bg-[#E2CB9F] text-slate-950 font-extrabold shadow-xl shadow-[#D4B886]/25',
-    iconColor: 'text-[#D4B886]',
-    tagColor: 'bg-[#D4B886]/10 text-[#E2CB9F] border-[#D4B886]/20',
-    radialFlare: 'bg-[#D4B886]/10'
+    badgeBg: 'bg-sky-500/15 border-sky-500/30 text-sky-300',
+    badgeText: 'text-sky-400',
+    activeBorder: 'border-sky-500/60 shadow-xl shadow-sky-500/15 ring-1 ring-sky-500/30',
+    buttonAccent: 'bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold shadow-xl shadow-sky-500/25',
+    iconColor: 'text-sky-400',
+    tagColor: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+    radialFlare: 'bg-sky-500/10'
   };
 }
 

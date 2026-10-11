@@ -136,7 +136,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
         {/* Header Ribbon */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4B886] block">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400 block">
               ODYSSEY AI
             </span>
             <h3 className="font-bold text-xl text-white tracking-tight">
@@ -167,8 +167,8 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Departure</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-[#D4B886] transition-colors">
-                <MapPin className="w-4 h-4 text-[#D4B886] shrink-0" />
+              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-sky-400 transition-colors">
+                <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
                 <input
                   type="text"
                   value={origin}
@@ -182,8 +182,8 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Destination</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-[#D4B886] transition-colors">
-                <Globe className="w-4 h-4 text-[#D4B886] shrink-0" />
+              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-sky-400 transition-colors">
+                <Globe className="w-4 h-4 text-sky-400 shrink-0" />
                 <input
                   type="text"
                   value={destination}
@@ -200,8 +200,8 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Start Date</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-[#D4B886] transition-colors">
-                <Calendar className="w-4 h-4 text-[#D4B886] shrink-0" />
+              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-sky-400 transition-colors">
+                <Calendar className="w-4 h-4 text-sky-400 shrink-0" />
                 <input
                   type="date"
                   value={startDate}
@@ -217,8 +217,8 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">End Date</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-[#D4B886] transition-colors">
-                <Calendar className="w-4 h-4 text-[#D4B886] shrink-0" />
+              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 focus-within:border-sky-400 transition-colors">
+                <Calendar className="w-4 h-4 text-sky-400 shrink-0" />
                 <input
                   type="date"
                   value={endDate}
@@ -237,7 +237,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
           {nightsCount > 0 && (
             <div className="text-[11px] text-slate-400 font-medium px-1 flex items-center justify-between py-1 bg-white/5 rounded-xl border border-white/5 px-3">
               <span>Estimated Duration</span>
-              <span className="text-[#D4B886] font-bold">{nightsCount} Nights Stay</span>
+              <span className="text-sky-400 font-bold">{nightsCount} Nights Stay</span>
             </div>
           )}
 
@@ -256,11 +256,11 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                   }}
                   className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white active:scale-95 transition-transform cursor-pointer"
                 >
-                  <Minus className="w-3.5 h-3.5 text-[#D4B886]" />
+                  <Minus className="w-3.5 h-3.5 text-sky-400" />
                 </button>
 
                 <div className="flex items-center space-x-2 px-2">
-                  <Users className="w-3.5 h-3.5 text-[#D4B886]" />
+                  <Users className="w-3.5 h-3.5 text-sky-400" />
                   <span className="font-bold text-sm text-white">{guestCount}</span>
                   <span className="text-[10px] text-slate-400 font-medium">Guests</span>
                 </div>
@@ -273,7 +273,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                   }}
                   className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white active:scale-95 transition-transform cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[#D4B886]" />
+                  <Plus className="w-3.5 h-3.5 text-sky-400" />
                 </button>
               </div>
             </div>
@@ -287,7 +287,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                   onClick={() => setBudget('low')}
                   className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
                     budget === 'low'
-                      ? 'bg-[#D4B886] text-slate-950 shadow-md font-bold'
+                      ? 'bg-sky-400 text-slate-950 shadow-md font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -299,7 +299,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                   onClick={() => setBudget('medium')}
                   className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
                     budget === 'medium'
-                      ? 'bg-[#D4B886] text-slate-950 shadow-md font-bold'
+                      ? 'bg-sky-400 text-slate-950 shadow-md font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -311,7 +311,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                   onClick={() => setBudget('high')}
                   className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
                     budget === 'high'
-                      ? 'bg-[#D4B886] text-slate-950 shadow-md font-bold'
+                      ? 'bg-sky-400 text-slate-950 shadow-md font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -326,7 +326,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-[#D4B886] hover:bg-[#E2CB9F] text-slate-950 font-extrabold text-xs shadow-lg shadow-[#D4B886]/20 active:scale-95 transition-all flex items-center justify-center space-x-2 mt-6 cursor-pointer"
+            className="w-full py-4 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-sky-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 mt-6 cursor-pointer"
           >
             {isLoading ? (
               <span className="flex items-center space-x-2">
