@@ -59,20 +59,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#080B11]/85 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg bg-[#121722] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-6 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xl space-y-6 text-slate-900">
         
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-[#3B82F6]" />
-            <h3 className="font-bold text-lg text-white">
+            <Sparkles className="w-5 h-5 text-rose-500" />
+            <h3 className="font-bold text-lg text-slate-900">
               Export Your Journey
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -84,43 +84,43 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Copy Markdown */}
           <button
             onClick={handleCopyMarkdown}
-            className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between hover:border-[#3B82F6] transition-all group text-left"
+            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-rose-300 hover:bg-rose-50/30 transition-all group text-left cursor-pointer"
           >
             <div className="flex items-center space-x-3 text-left">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[#3B82F6] shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm border border-rose-100">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-bold text-sm text-white block">
+                <span className="font-bold text-sm text-slate-900 block">
                   Copy Formatted Markdown
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   Ideal for pasting into Notion, Apple Notes, or email summaries.
                 </span>
               </div>
             </div>
-            {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5 text-slate-400 group-hover:text-[#3B82F6]" />}
+            {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5 text-slate-400 group-hover:text-rose-500" />}
           </button>
 
           {/* Download ICS Calendar */}
           <button
             onClick={handleDownloadICS}
-            className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between hover:border-[#3B82F6] transition-all group text-left"
+            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-rose-300 hover:bg-rose-50/30 transition-all group text-left cursor-pointer"
           >
             <div className="flex items-center space-x-3 text-left">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[#3B82F6] shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm border border-rose-100">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-bold text-sm text-white block">
+                <span className="font-bold text-sm text-slate-900 block">
                   Export iCalendar File (.ics)
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   Imports directly into Apple Calendar, Google Calendar, or Outlook.
                 </span>
               </div>
             </div>
-            <Download className="w-5 h-5 text-slate-400 group-hover:text-[#3B82F6]" />
+            <Download className="w-5 h-5 text-slate-400 group-hover:text-rose-500" />
           </button>
 
         </div>
@@ -129,7 +129,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div className="pt-2 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/10 transition-all"
+            className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-all cursor-pointer"
           >
             Close Window
           </button>

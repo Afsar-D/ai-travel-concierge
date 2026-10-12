@@ -143,6 +143,38 @@ export function parseMarkdownToItinerary(
   let matches = [...markdownText.matchAll(dayHeaderRegex)];
 
   if (matches.length === 0) {
+    // If the text is purely a weather forecast, clothing advice, or advisory, do not synthesize an itinerary
+    const isPureWeatherOrAdvisory =
+      lowerText.includes('humidity') ||
+      lowerText.includes('rainfall') ||
+      lowerText.includes('precipitation') ||
+      lowerText.includes('daytime temperatures') ||
+      (lowerText.includes('weather') && !lowerText.includes('day 1') && !lowerText.includes('itinerary'));
+    if (isPureWeatherOrAdvisory) {
+      return [];
+    }
+
+    // Do NOT synthesize an itinerary if the text is flight routes, airlines, or hotel listings
+    const isFlightOrHotelContent =
+      lowerText.includes('outbound') ||
+      lowerText.includes('return flight') ||
+      lowerText.includes('layover') ||
+      lowerText.includes('travel time') ||
+      lowerText.includes('flight details') ||
+      lowerText.includes('flights from') ||
+      lowerText.includes('airline') ||
+      lowerText.includes('to dps') ||
+      lowerText.includes('to kul') ||
+      lowerText.includes('to bom') ||
+      lowerText.includes('bom to') ||
+      lowerText.includes('del to') ||
+      lowerText.includes('hotel recommendations') ||
+      lowerText.includes('price per night') ||
+      lowerText.includes('rate per night');
+    if (isFlightOrHotelContent) {
+      return [];
+    }
+
     // Resilient Fallback: If no explicit 'Day X' headers were found, treat the entire markdownText as Day 1
     const fallbackDate = new Date(baseYear, baseMonth, baseDay);
     const formattedDate = fallbackDate.toLocaleDateString('en-US', {
@@ -158,6 +190,21 @@ export function parseMarkdownToItinerary(
       const line = lines[i];
       if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
         let cleanContent = line.replace(/^[\*\-•\d\.\s]+/, '').trim();
+        const lowerRaw = cleanContent.toLowerCase();
+
+        // Skip weather bullets
+        if (
+          lowerRaw.startsWith('temperature') ||
+          lowerRaw.startsWith('humidity') ||
+          lowerRaw.startsWith('rainfall') ||
+          lowerRaw.startsWith('skies') ||
+          lowerRaw.startsWith('daytime temperatures') ||
+          lowerRaw.startsWith('forecast') ||
+          lowerRaw.startsWith('weather')
+        ) {
+          continue;
+        }
+
         if (!cleanContent || cleanContent.length < 5) continue;
 
         let placeName = '';
@@ -276,7 +323,7 @@ export function parseMarkdownToItinerary(
         let cleanContent = line.replace(/^[\*\-•\d\.\s]+/, '').trim();
         const lowerRaw = cleanContent.toLowerCase();
 
-        // Skip metadata / summary bullet lines that are not real activities
+        // Skip metadata, weather forecasts, and summary bullet lines that are not real activities
         if (
           lowerRaw.startsWith('date:') ||
           lowerRaw.startsWith('weather:') ||
@@ -284,6 +331,15 @@ export function parseMarkdownToItinerary(
           lowerRaw.startsWith('overview:') ||
           lowerRaw.startsWith('note:') ||
           lowerRaw.startsWith('day ') ||
+          lowerRaw.startsWith('temperature') ||
+          lowerRaw.startsWith('humidity') ||
+          lowerRaw.startsWith('rainfall') ||
+          lowerRaw.startsWith('skies') ||
+          lowerRaw.startsWith('daytime temperatures') ||
+          lowerRaw.startsWith('forecast') ||
+          lowerRaw.startsWith('precipitation') ||
+          lowerRaw.startsWith('climate') ||
+          lowerRaw.startsWith('uv index') ||
           lowerRaw.includes('estimated daily cost') ||
           lowerRaw.includes('daily spend') ||
           lowerRaw.includes('total spend')
@@ -342,8 +398,14 @@ export function parseMarkdownToItinerary(
         }
 
         let locationCapsule = `${destination}`;
-        if (finalTitle && !finalTitle.toLowerCase().startsWith('spend') && !finalTitle.toLowerCase().startsWith('enjoy') && !finalTitle.toLowerCase().startsWith('head') && !finalTitle.toLowerCase().startsWith('arrive')) {
-          locationCapsule = `${finalTitle.replace(/[\[\]]/g, '')}, ${destination}`;
+        let cleanLocTitle = finalTitle.replace(/\s+via\s+(?:train|flight|bus|cab|car|taxi)/i, '').replace(/[\[\]]/g, '').trim();
+        const destLower = destination.toLowerCase().trim();
+
+        if (cleanLocTitle.toLowerCase().includes(destLower)) {
+          // If title already has destination (e.g., "Gateway of India, Mumbai"), don't duplicate destination
+          locationCapsule = cleanLocTitle;
+        } else if (cleanLocTitle && !cleanLocTitle.toLowerCase().startsWith('spend') && !cleanLocTitle.toLowerCase().startsWith('enjoy') && !cleanLocTitle.toLowerCase().startsWith('head') && !cleanLocTitle.toLowerCase().startsWith('arrive')) {
+          locationCapsule = `${cleanLocTitle}, ${destination}`;
         } else {
           locationCapsule = `Central ${destination}`;
         }

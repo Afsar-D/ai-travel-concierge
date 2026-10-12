@@ -14,76 +14,61 @@ export function getTripTheme(destination: string = '', country: string = ''): Tr
   const d = (destination + ' ' + country).toLowerCase();
   
   if (d.includes('indonesia') || d.includes('bali') || d.includes('thailand') || d.includes('island')) {
-    // Tropical Emerald & Pearl Theme (Clean Luxury)
+    // Tropical Emerald Theme
     return {
-      primaryHex: '#10B981',
-      glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-      badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
-      badgeText: 'text-emerald-400',
-      activeBorder: 'border-emerald-500/60 shadow-xl shadow-emerald-500/15 ring-1 ring-emerald-500/30',
-      buttonAccent: 'bg-[#10B981] hover:bg-[#34D399] text-slate-950 font-extrabold shadow-xl shadow-[#10B981]/25',
-      iconColor: 'text-[#10B981]',
-      tagColor: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+      primaryHex: '#059669',
+      glowBg: 'from-white/95 via-white/85 to-slate-50/70',
+      badgeBg: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+      badgeText: 'text-emerald-600',
+      activeBorder: 'border-emerald-400 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/30',
+      buttonAccent: 'bg-[#059669] hover:bg-[#10B981] text-white font-extrabold shadow-lg shadow-emerald-600/20',
+      iconColor: 'text-[#059669]',
+      tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       radialFlare: 'bg-emerald-500/10'
     };
   }
   
-  if (d.includes('japan') || d.includes('tokyo') || d.includes('kyoto') || d.includes('cherry')) {
-    // Sakura Rose & Satin Pearl Theme
-    return {
-      primaryHex: '#F43F5E',
-      glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-      badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-300',
-      badgeText: 'text-rose-400',
-      activeBorder: 'border-rose-500/60 shadow-xl shadow-rose-500/15 ring-1 ring-rose-500/30',
-      buttonAccent: 'bg-[#F43F5E] hover:bg-[#FB7185] text-white font-extrabold shadow-xl shadow-[#F43F5E]/25',
-      iconColor: 'text-[#F43F5E]',
-      tagColor: 'bg-rose-500/10 text-rose-300 border-rose-500/20',
-      radialFlare: 'bg-rose-500/10'
-    };
-  }
-  
   if (d.includes('kerala') || d.includes('india') || d.includes('jungle') || d.includes('backwater')) {
-    // Coastal Teal & Spice Cyan Theme
+    // Coastal Teal & Spice Theme
     return {
-      primaryHex: '#06B6D4',
-      glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-      badgeBg: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300',
-      badgeText: 'text-cyan-400',
-      activeBorder: 'border-cyan-500/60 shadow-xl shadow-cyan-500/15 ring-1 ring-cyan-500/30',
-      buttonAccent: 'bg-[#06B6D4] hover:bg-[#22D3EE] text-slate-950 font-extrabold shadow-xl shadow-[#06B6D4]/25',
-      iconColor: 'text-[#06B6D4]',
-      tagColor: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+      primaryHex: '#0891B2',
+      glowBg: 'from-white/95 via-white/85 to-slate-50/70',
+      badgeBg: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+      badgeText: 'text-cyan-600',
+      activeBorder: 'border-cyan-400 shadow-md shadow-cyan-500/10 ring-1 ring-cyan-400/30',
+      buttonAccent: 'bg-[#0891B2] hover:bg-[#06B6D4] text-white font-extrabold shadow-lg shadow-cyan-600/20',
+      iconColor: 'text-[#0891B2]',
+      tagColor: 'bg-cyan-50 text-cyan-700 border-cyan-200',
       radialFlare: 'bg-cyan-500/10'
     };
   }
   
   if (d.includes('amalfi') || d.includes('italy') || d.includes('ocean') || d.includes('greece') || d.includes('mediterranean')) {
-    // Mediterranean Azure & Sapphire Theme
+    // Mediterranean Azure Theme
     return {
-      primaryHex: '#0EA5E9',
-      glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-      badgeBg: 'bg-sky-500/15 border-sky-500/30 text-sky-300',
-      badgeText: 'text-sky-400',
-      activeBorder: 'border-sky-500/60 shadow-xl shadow-sky-500/15 ring-1 ring-sky-500/30',
-      buttonAccent: 'bg-[#0EA5E9] hover:bg-[#38BDF8] text-slate-950 font-extrabold shadow-xl shadow-[#0EA5E9]/25',
-      iconColor: 'text-[#0EA5E9]',
-      tagColor: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+      primaryHex: '#0284C7',
+      glowBg: 'from-white/95 via-white/85 to-slate-50/70',
+      badgeBg: 'bg-sky-50 border-sky-200 text-sky-700',
+      badgeText: 'text-sky-600',
+      activeBorder: 'border-sky-400 shadow-md shadow-sky-500/10 ring-1 ring-sky-400/30',
+      buttonAccent: 'bg-[#0284C7] hover:bg-[#0EA5E9] text-white font-extrabold shadow-lg shadow-sky-600/20',
+      iconColor: 'text-[#0284C7]',
+      tagColor: 'bg-sky-50 text-sky-700 border-sky-200',
       radialFlare: 'bg-sky-500/10'
     };
   }
   
-  // Default Modern Electric Sky / Cyan Theme
+  // Default Sunset Coral & Vibrant Rose Theme
   return {
-    primaryHex: '#38BDF8',
-    glowBg: 'from-[#06080E] via-[#06080E]/60 to-black/30',
-    badgeBg: 'bg-sky-500/15 border-sky-500/30 text-sky-300',
-    badgeText: 'text-sky-400',
-    activeBorder: 'border-sky-500/60 shadow-xl shadow-sky-500/15 ring-1 ring-sky-500/30',
-    buttonAccent: 'bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold shadow-xl shadow-sky-500/25',
-    iconColor: 'text-sky-400',
-    tagColor: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
-    radialFlare: 'bg-sky-500/10'
+    primaryHex: '#F43F5E',
+    glowBg: 'from-white/95 via-white/85 to-slate-50/70',
+    badgeBg: 'bg-rose-50 border-rose-200 text-rose-700',
+    badgeText: 'text-rose-600',
+    activeBorder: 'border-rose-400 shadow-md shadow-rose-500/10 ring-1 ring-rose-400/30',
+    buttonAccent: 'bg-[#F43F5E] hover:bg-[#E11D48] text-white font-extrabold shadow-lg shadow-rose-500/25',
+    iconColor: 'text-[#F43F5E]',
+    tagColor: 'bg-rose-50 text-rose-700 border-rose-200',
+    radialFlare: 'bg-rose-500/10'
   };
 }
 

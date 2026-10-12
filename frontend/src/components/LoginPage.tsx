@@ -59,45 +59,45 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-screen flex items-center justify-center p-6 bg-[#080B11] text-white font-sans overflow-hidden selection:bg-white/20">
+    <div className="relative min-h-screen w-screen flex items-center justify-center p-6 bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden selection:bg-rose-500/20">
       
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=2000&q=90"
           alt="Luxury Travel Background"
-          className="w-full h-full object-cover opacity-25 filter brightness-90"
+          className="w-full h-full object-cover opacity-15 filter brightness-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#080B11] via-[#080B11]/70 to-[#080B11]/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/85 to-[#F8FAFC]/50" />
       </div>
 
       {/* Login Glass Card */}
-      <div className="relative z-10 w-full max-w-md glass-panel-dark rounded-3xl p-8 border border-white/15 shadow-2xl space-y-6 backdrop-blur-2xl">
+      <div className="relative z-10 w-full max-w-md bg-white/95 rounded-3xl p-8 border border-slate-200/90 shadow-2xl space-y-6 backdrop-blur-2xl text-slate-900">
         
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md mx-auto flex items-center justify-center text-sky-400 shadow-xl">
-            <Globe className="w-7 h-7 animate-pulse text-sky-400" />
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 backdrop-blur-md mx-auto flex items-center justify-center text-rose-500 shadow-sm">
+            <Globe className="w-7 h-7 animate-pulse text-rose-500" />
           </div>
           <div>
-            <h1 className="font-extrabold text-3xl tracking-tight text-white uppercase drop-shadow-md">
-              ODYSSEY <span className="text-sky-400">AI</span>
+            <h1 className="font-extrabold text-3xl tracking-tight text-slate-900 uppercase drop-shadow-sm">
+              ODYSSEY <span className="text-rose-500">AI</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mt-0.5">
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mt-0.5">
               Exclusive Horizon & Journey Planner
             </p>
           </div>
         </div>
 
         {/* Tab Switcher (Sign In vs Sign Up) */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 text-xs font-semibold">
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200/80 text-xs font-semibold">
           <button
             type="button"
             onClick={() => { setAuthMode('signin'); setError(null); setSuccessMsg(null); }}
             className={`py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
               authMode === 'signin'
-                ? 'bg-white/20 text-white font-bold shadow-md border border-white/15'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-slate-900 font-bold shadow-sm border border-slate-200/60'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             Sign In
@@ -107,8 +107,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             onClick={() => { setAuthMode('signup'); setError(null); setSuccessMsg(null); }}
             className={`py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
               authMode === 'signup'
-                ? 'bg-white/20 text-white font-bold shadow-md border border-white/15'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-slate-900 font-bold shadow-sm border border-slate-200/60'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             Create Account
@@ -117,16 +117,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center space-x-2.5 animate-shake">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-2.5 animate-shake">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center space-x-2.5">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center space-x-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -136,14 +136,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           
           {authMode === 'signup' && (
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Full Name</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Full Name</label>
               <div className="relative flex items-center">
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5" />
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-white/30 transition-all duration-300"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
                   placeholder="e.g. Anney Vance"
                 />
               </div>
@@ -151,7 +151,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Email Address</label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Email Address</label>
             <div className="relative flex items-center">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5" />
               <input
@@ -159,14 +159,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-white/30 transition-all duration-300"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
                 placeholder="anney@odyssey.luxury"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Password</label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Password</label>
             <div className="relative flex items-center">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
               <input
@@ -174,7 +174,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-white/30 transition-all duration-300"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
                 placeholder="••••••••••••"
               />
             </div>
@@ -182,7 +182,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           {authMode === 'signup' && (
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Confirm Password</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Confirm Password</label>
               <div className="relative flex items-center">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
                 <input
@@ -190,7 +190,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   value={confirmPassword}
                   onChange={(e) => { setConfirmPassword(e.target.value); if (error) setError(null); }}
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-white/30 transition-all duration-300"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
                   placeholder="••••••••••••"
                 />
               </div>
@@ -200,17 +200,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-white/15 hover:bg-white/25 disabled:opacity-50 border border-white/20 text-white font-bold text-sm shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex items-center justify-center space-x-2 mt-4 cursor-pointer"
+            className="w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white font-bold text-sm shadow-xl shadow-rose-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex items-center justify-center space-x-2 mt-4 cursor-pointer"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
+                <Loader2 className="w-4 h-4 text-white animate-spin" />
                 <span>Authenticating...</span>
               </>
             ) : (
               <>
                 <span>{authMode === 'signin' ? 'Sign In to Experience' : 'Create & Access Account'}</span>
-                <ArrowRight className="w-4 h-4 text-sky-400" />
+                <ArrowRight className="w-4 h-4 text-white" />
               </>
             )}
           </button>

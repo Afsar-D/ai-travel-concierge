@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Globe } from 'lucide-react';
+import { LoadingScreen } from './components/LoadingScreen';
 import { LoginPage } from './components/LoginPage';
 import { TripDashboard } from './components/TripDashboard';
 import { TripPlanView } from './components/TripPlanView';
@@ -13,8 +13,31 @@ import { NotFound404Page } from './components/NotFound404Page';
 
 import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
+import { parseBackendReply } from './utils/parser';
 import { fetchUserSessions, deleteUserSession } from './services/api';
 import { getDestinationBackgroundImage } from './utils/themeUtils';
+
+const sanitizeTripData = (t: TripState): TripState => {
+  const cleaned: TripState = {
+    ...t,
+    bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
+  };
+
+  // If previous chat session corrupted description with flight or hotel text
+  if (t.description && (/\[Outbound|\* \*\*Outbound|Price per night/i.test(t.description))) {
+    const parsed = parseBackendReply(t.description, t.origin, t.destination);
+    if (parsed.flights.length > 0 && (!t.flights || t.flights.length === 0)) {
+      cleaned.flights = parsed.flights;
+    }
+    if (parsed.hotels.length > 0 && (!t.hotels || t.hotels.length === 0)) {
+      cleaned.hotels = parsed.hotels;
+    }
+    cleaned.description = t.description
+      .replace(/\[?(?:Outbound|Return Flight|Flight Options|Hotels?)[\s\S]*$/i, '')
+      .trim();
+  }
+  return cleaned;
+};
 
 export function App() {
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -87,10 +110,7 @@ export function App() {
       const stored = localStorage.getItem(key);
       if (stored) {
         const parsed: TripState[] = JSON.parse(stored);
-        return parsed.map(t => ({
-          ...t,
-          bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
-        }));
+        return parsed.map(sanitizeTripData);
       }
       return [];
     } catch {
@@ -109,7 +129,7 @@ export function App() {
       try {
         const stored = localStorage.getItem(storageKey);
         if (stored) {
-          const parsed: TripState[] = JSON.parse(stored);
+          const parsed: TripState[] = JSON.parse(stored).map(sanitizeTripData);
           setTrips(parsed);
           if (parsed.length > 0) {
             setActiveTrip(parsed[0]);
@@ -156,10 +176,7 @@ export function App() {
                 return !remoteKeys.has(pt.id) && !remoteKeys.has(pt.session_id) && !remoteKeys.has(destKey);
               });
 
-              const cleanRemote = remoteTrips.map(rt => ({
-                ...rt,
-                bgImage: rt.bgImage || getDestinationBackgroundImage(rt.destination)
-              }));
+              const cleanRemote = remoteTrips.map(sanitizeTripData);
 
               const merged = [...cleanRemote, ...localOnly];
               try {
@@ -191,10 +208,7 @@ export function App() {
       if (storedTrips) {
         const parsed: TripState[] = JSON.parse(storedTrips);
         if (parsed.length > 0) {
-          return {
-            ...parsed[0],
-            bgImage: parsed[0].bgImage || getDestinationBackgroundImage(parsed[0].destination)
-          };
+          return sanitizeTripData(parsed[0]);
         }
       }
     } catch {}
@@ -261,6 +275,7 @@ export function App() {
   const handleExploreTrip = (targetTrip: TripState) => {
     setActiveTrip(targetTrip);
     setItineraryDays(parseMarkdownToItinerary(targetTrip.description, targetTrip.destination, targetTrip.start_date, targetTrip.budget));
+    setPlanActiveTab('itinerary');
     setViewMode('planDetail');
   };
 
@@ -295,17 +310,24 @@ export function App() {
       particleCount: 60,
       spread: 70,
       origin: { y: 0.8 },
-      colors: ['#38BDF8', '#3B82F6', '#FFFFFF'],
+      colors: ['#F43F5E', '#FB7185', '#FDA4AF', '#FFFFFF'],
     });
   };
 
   const [selectedTimelineDayIndex, setSelectedTimelineDayIndex] = useState<number>(0);
   const [lastUpdatedDayNumber, setLastUpdatedDayNumber] = useState<number | null>(null);
+  const [planActiveTab, setPlanActiveTab] = useState<'itinerary' | 'inventory'>('itinerary');
+
+  const handleNavigateToInventory = () => {
+    setPlanActiveTab('inventory');
+    setViewMode('planDetail');
+  };
 
   const handleNavigateToDay = (dayNumber: number) => {
     const idx = Math.max(0, dayNumber - 1);
     setSelectedTimelineDayIndex(idx);
     setLastUpdatedDayNumber(dayNumber);
+    setPlanActiveTab('itinerary');
     setViewMode('planDetail');
   };
 
@@ -390,41 +412,11 @@ export function App() {
   }
 
   if (isInitialLoading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#06080E] text-white flex flex-col items-center justify-center font-sans select-none overflow-hidden">
-        {/* Ambient Radial Background Glow */}
-        <div className="absolute w-96 h-96 rounded-full bg-sky-500/10 blur-[120px] pointer-events-none animate-pulse" />
-        <div className="absolute w-64 h-64 rounded-full bg-indigo-600/10 blur-[100px] pointer-events-none" />
-
-        {/* Outer Ring & Spinning Globe Icon */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div className="w-24 h-24 rounded-full border-2 border-dashed border-sky-400/40 animate-spin" style={{ animationDuration: '8s' }} />
-          <div className="absolute w-16 h-16 rounded-full border-2 border-t-sky-400 border-r-transparent border-b-indigo-500 border-l-transparent animate-spin" style={{ animationDuration: '2s' }} />
-          <div className="absolute w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl">
-            <Globe className="w-6 h-6 text-sky-400 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Branding & Status */}
-        <div className="text-center space-y-3 z-10 max-w-sm px-6">
-          <h1 className="font-extrabold text-3xl tracking-widest text-white uppercase drop-shadow-lg">
-            ODYSSEY <span className="text-sky-400">AI</span>
-          </h1>
-          <p className="text-xs tracking-widest text-slate-400 uppercase font-mono">
-            Curating your luxury itineraries...
-          </p>
-
-          {/* Shimmer Loading Bar */}
-          <div className="w-48 h-1 bg-white/10 rounded-full mx-auto overflow-hidden relative mt-4">
-            <div className="absolute inset-y-0 bg-gradient-to-r from-sky-400 via-sky-200 to-sky-400 w-full animate-pulse rounded-full" />
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <div className="min-h-screen w-screen bg-slate-950 text-white font-sans antialiased overflow-x-hidden selection:bg-sky-500/30">
+    <div className="min-h-screen w-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-rose-500/20">
       
       {viewMode === 'dashboard' ? (
         <TripDashboard
@@ -446,6 +438,8 @@ export function App() {
           selectedDayIndex={selectedTimelineDayIndex}
           onSelectDayIndex={setSelectedTimelineDayIndex}
           lastUpdatedDayNumber={lastUpdatedDayNumber}
+          activeTab={planActiveTab}
+          onTabChange={setPlanActiveTab}
           onBack={() => setViewMode('dashboard')}
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
@@ -468,6 +462,7 @@ export function App() {
         trip={activeTrip}
         onUpdateItinerary={handleUpdateItinerary}
         onNavigateToDay={handleNavigateToDay}
+        onNavigateToInventory={handleNavigateToInventory}
       />
 
       <CreateTripModal

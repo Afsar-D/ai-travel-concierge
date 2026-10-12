@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta, timezone
 import os
+from dotenv import find_dotenv, load_dotenv
 from jose import jwt
 import bcrypt
 
+load_dotenv(find_dotenv())
 SECRET_KEY = str(os.getenv("JWT_SECRET_KEY"))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
-
+              
 def hash_password(password: str) -> str:
     pass_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()

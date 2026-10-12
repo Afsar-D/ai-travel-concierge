@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, User, Sparkles, Compass, ShieldCheck } from 'lucide-react';
+import { X, Send, User, Sparkles, Compass, ShieldCheck, Plane } from 'lucide-react';
 import type { ChatMessage, TripState, ItineraryDay } from '../types';
 import { sendChatMessage } from '../services/api';
 import { parseMarkdownToItinerary } from '../utils/itineraryParser';
@@ -13,6 +13,7 @@ interface ConciergeChatModalProps {
   trip: TripState | null;
   onUpdateItinerary?: (updatedTrip: TripState, updatedDays: ItineraryDay[]) => void;
   onNavigateToDay?: (dayNumber: number) => void;
+  onNavigateToInventory?: () => void;
 }
 
 export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
@@ -20,7 +21,8 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   onClose,
   trip,
   onUpdateItinerary,
-  onNavigateToDay
+  onNavigateToDay,
+  onNavigateToInventory
 }) => {
   const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>(() => {
     try {
@@ -87,9 +89,14 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
     addMessageToCurrentTrip(userMsg);
     setIsLoading(true);
 
+    // Detect query types
+    const isFlightQuery = /\b(flight|flights|fly|airline|airlines|airfare|plane|air\s*ticket|tickets?)\b/i.test(userText);
+    const isHotelQuery = /\b(hotel|hotels|stay|resort|villa|accommodation|lodging|booking)\b/i.test(userText);
+    const isInventoryQuery = isFlightQuery || isHotelQuery;
+
     // Detect if user is asking to change or update their itinerary
     const isPlanModification = /\b(change|modify|update|add|remove|replace|swap|switch|substitute|day\s*\d+|instead of|delete|reschedule|adjust)\b/i.test(userText);
-    const messageToSend = isPlanModification
+    const messageToSend = (isPlanModification && !isInventoryQuery)
       ? `${userText}\n\n[Please provide the updated itinerary for the affected day(s) using "## Day X" and "* **[Activity Title]**: Description" format so my timeline updates.]`
       : userText;
 
@@ -101,23 +108,52 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
       }
 
       let hasUpdatedItinerary = false;
+      let isInventoryUpdate = false;
       let summaryText = '';
       let parsedDays: ItineraryDay[] = [];
 
       if (response.reply && trip) {
-        // 1. Attempt to parse any updated day blocks from reply
-        parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date, trip.budget);
+        const isWeatherQuery = /weather|forecast|temperature|humidity|rainfall|climate/i.test(userText);
+        const hasExplicitDayHeader = /(?:^|\n)##\s*Day\s*\d+/i.test(response.reply);
         const parsedData = parseBackendReply(response.reply, trip.origin, trip.destination);
 
-        // 2. Fallback: if no ## Day header was generated, check if a specific day was mentioned with bullet points
-        if (parsedDays.length === 0) {
-          const dayMatch = userText.match(/day\s*(\d+)/i) || response.reply.match(/day\s*(\d+)/i);
-          if (dayMatch) {
-            const targetDayNum = parseInt(dayMatch[1], 10);
-            const syntheticMarkdown = `## Day ${targetDayNum}\n${response.reply}`;
-            const fallbackParsed = parseMarkdownToItinerary(syntheticMarkdown, trip.destination, trip.start_date, trip.budget);
-            if (fallbackParsed.length > 0 && fallbackParsed[0].activities.length > 0) {
-              parsedDays = fallbackParsed;
+        if (isInventoryQuery || (parsedData.flights.length > 0 || parsedData.hotels.length > 0)) {
+          // Dedicated Inventory Update (Flights & Hotels)
+          // NEVER corrupt trip.description or append flight bullets into timeline!
+          if (parsedData.flights.length > 0 || parsedData.hotels.length > 0) {
+            isInventoryUpdate = true;
+            const updatedTrip: TripState = {
+              ...trip,
+              flights: parsedData.flights.length > 0 ? parsedData.flights : trip.flights,
+              hotels: parsedData.hotels.length > 0 ? parsedData.hotels : trip.hotels,
+              session_id: response.session_id || trip.session_id
+            };
+            const currentDays = parseMarkdownToItinerary(trip.description, trip.destination, trip.start_date, trip.budget);
+            if (onUpdateItinerary) {
+              onUpdateItinerary(updatedTrip, currentDays);
+            }
+            if (parsedData.flights.length > 0 && parsedData.hotels.length > 0) {
+              summaryText = 'Flights & Stays Options Updated';
+            } else if (parsedData.flights.length > 0) {
+              summaryText = `${parsedData.flights.length} Flight Route(s) Saved to Flights & Stays`;
+            } else {
+              summaryText = `${parsedData.hotels.length} Hotel Option(s) Saved to Flights & Stays`;
+            }
+          }
+        } else if (!isWeatherQuery || hasExplicitDayHeader) {
+          // 1. Attempt to parse any updated day blocks from reply
+          parsedDays = parseMarkdownToItinerary(response.reply, trip.destination, trip.start_date, trip.budget);
+
+          // 2. Fallback: if no ## Day header was generated, check if a specific day was mentioned with bullet points
+          if (parsedDays.length === 0) {
+            const dayMatch = userText.match(/day\s*(\d+)/i) || response.reply.match(/day\s*(\d+)/i);
+            if (dayMatch) {
+              const targetDayNum = parseInt(dayMatch[1], 10);
+              const syntheticMarkdown = `## Day ${targetDayNum}\n${response.reply}`;
+              const fallbackParsed = parseMarkdownToItinerary(syntheticMarkdown, trip.destination, trip.start_date, trip.budget);
+              if (fallbackParsed.length > 0 && fallbackParsed[0].activities.length > 0) {
+                parsedDays = fallbackParsed;
+              }
             }
           }
         }
@@ -166,17 +202,6 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
           if (onUpdateItinerary) {
             onUpdateItinerary(updatedTrip, mergedDays);
           }
-        } else if (parsedData.flights.length > 0 || parsedData.hotels.length > 0) {
-          const combinedDescription = `${trip.description}\n\n${response.reply}`;
-          const updatedTrip: TripState = {
-            ...trip,
-            description: combinedDescription,
-            session_id: response.session_id || trip.session_id
-          };
-          const currentDays = parseMarkdownToItinerary(combinedDescription, trip.destination, trip.start_date, trip.budget);
-          if (onUpdateItinerary) {
-            onUpdateItinerary(updatedTrip, currentDays);
-          }
         }
       }
 
@@ -186,7 +211,8 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         content: response.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'success',
-        itineraryUpdated: hasUpdatedItinerary,
+        itineraryUpdated: !isInventoryUpdate && hasUpdatedItinerary,
+        isInventoryUpdate: isInventoryUpdate,
         updatedDaysSummary: summaryText,
         targetDayNumber: parsedDays[0]?.dayNumber || 1
       };
@@ -213,7 +239,7 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#04060A]/85 backdrop-blur-xl animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-fade-in">
       
       {/* Dynamic Background Preview Blur */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-3xl">
@@ -221,38 +247,38 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
           <img
             src={trip.bgImage}
             alt={trip.destination}
-            className="w-full h-full object-cover opacity-15 filter blur-lg scale-105"
+            className="w-full h-full object-cover opacity-10 filter blur-xl scale-105"
           />
         )}
-        <div className="absolute inset-0 bg-[#080B11]/80" />
+        <div className="absolute inset-0 bg-white/70" />
       </div>
 
       {/* Sleek Agent Panel Container */}
-      <div className="relative z-10 w-full max-w-2xl h-[78vh] bg-[#0C1019]/95 border border-white/15 rounded-3xl shadow-2xl flex flex-col overflow-hidden backdrop-blur-2xl">
+      <div className="relative z-10 w-full max-w-2xl h-[78vh] bg-white/95 border border-slate-200/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden backdrop-blur-2xl text-slate-900">
         
         {/* Agent Header */}
-        <div className="p-4 px-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+        <div className="p-4 px-6 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center space-x-3.5">
             
             {/* Agent Emblem Avatar */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-md">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 shadow-sm">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-[#0C1019]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
 
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-base text-white">
+                <h3 className="font-bold text-base text-slate-900">
                   ODYSSEY Concierge
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-[9px] font-semibold text-sky-400 flex items-center space-x-1">
-                  <ShieldCheck className="w-3 h-3 text-sky-400" />
+                <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[9px] font-semibold text-rose-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3 h-3 text-rose-500" />
                   <span>AI Agent</span>
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">
+              <span className="text-[10px] text-slate-500 font-medium">
                 Personalized Assistant for {trip ? trip.destination : 'your trip'}
               </span>
             </div>
@@ -261,7 +287,7 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors duration-300 active:scale-95"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-300 active:scale-95 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -279,33 +305,59 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
               {/* Sender Icon */}
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
                 msg.sender === 'user' 
-                  ? 'bg-white/15 text-white border border-white/20' 
-                  : 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                  ? 'bg-rose-500 text-white shadow-sm' 
+                  : 'bg-rose-50 text-rose-500 border border-rose-200'
               }`}>
-                {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4 text-sky-400" />}
+                {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4 text-rose-500" />}
               </div>
 
               {/* Message Bubble */}
               <div className={`max-w-md rounded-2xl p-4 text-xs leading-relaxed ${
                 msg.sender === 'user'
-                  ? 'bg-sky-600/25 border border-sky-500/40 text-white rounded-tr-none shadow-md'
-                  : 'bg-white/5 border border-white/10 text-slate-100 rounded-tl-none backdrop-blur-md'
+                  ? 'bg-rose-500 text-white rounded-tr-none shadow-md shadow-rose-500/15'
+                  : 'bg-slate-50/90 border border-slate-200/90 text-slate-800 rounded-tl-none shadow-sm'
               }`}>
-                <div className="flex items-center justify-between text-[10px] opacity-60 mb-1">
+                <div className={`flex items-center justify-between text-[10px] mb-1 ${
+                  msg.sender === 'user' ? 'text-rose-100' : 'text-slate-400'
+                }`}>
                   <span>{msg.sender === 'user' ? 'You' : 'Concierge'}</span>
                   <span>{msg.timestamp}</span>
                 </div>
                 {msg.sender === 'assistant' ? (
                   <>
                     <MarkdownView content={msg.content} />
-                    {msg.itineraryUpdated && (
-                      <div className="mt-3 pt-2.5 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-400 font-medium">
+                    {msg.isInventoryUpdate && (
+                      <div className="mt-3 pt-2.5 border-t border-sky-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-sky-800 font-medium">
                         <span className="flex items-center space-x-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                          <Plane className="w-3.5 h-3.5 text-sky-600 animate-pulse" />
+                          <span>{msg.updatedDaysSummary || 'Flights & Stays Updated'}</span>
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[10px] bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full text-sky-700 font-semibold shadow-sm">
+                            Saved to Inventory
+                          </span>
+                          {onNavigateToInventory && (
+                            <button
+                              onClick={() => {
+                                onNavigateToInventory();
+                                onClose();
+                              }}
+                              className="text-[10px] bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 rounded-full shadow-md shadow-rose-500/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                            >
+                              View in Flights & Stays →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {msg.itineraryUpdated && (
+                      <div className="mt-3 pt-2.5 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-700 font-medium">
+                        <span className="flex items-center space-x-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
                           <span>{msg.updatedDaysSummary || 'Itinerary Timeline Updated'}</span>
                         </span>
                         <div className="flex items-center space-x-2">
-                          <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full text-emerald-300 font-semibold shadow-sm">
+                          <span className="text-[10px] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-emerald-700 font-semibold shadow-sm">
                             Saved to Plan
                           </span>
                           {msg.targetDayNumber && onNavigateToDay && (
@@ -314,7 +366,7 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
                                 onNavigateToDay(msg.targetDayNumber!);
                                 onClose();
                               }}
-                              className="text-[10px] bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold px-3 py-1 rounded-full shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                              className="text-[10px] bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 rounded-full shadow-md shadow-rose-500/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
                             >
                               View in Timeline →
                             </button>
@@ -331,8 +383,8 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
           ))}
 
           {isLoading && (
-            <div className="flex items-center space-x-2 text-xs text-sky-400 pl-1">
-              <Sparkles className="w-4 h-4 animate-spin text-sky-400" />
+            <div className="flex items-center space-x-2 text-xs text-rose-500 pl-1 font-medium">
+              <Sparkles className="w-4 h-4 animate-spin text-rose-500" />
               <span>Concierge is researching tailored recommendations...</span>
             </div>
           )}
@@ -341,13 +393,13 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         </div>
 
         {/* Quick Prompts Bar */}
-        <div className="px-6 py-2.5 bg-white/5 border-t border-white/5 flex items-center space-x-2 overflow-x-auto no-scrollbar">
-          <Compass className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+        <div className="px-6 py-2.5 bg-slate-50/80 border-t border-slate-200/80 flex items-center space-x-2 overflow-x-auto no-scrollbar">
+          <Compass className="w-3.5 h-3.5 text-rose-500 shrink-0" />
           {quickPrompts.map((prompt, i) => (
             <button
               key={i}
               onClick={() => setInputText(prompt)}
-              className="px-3 py-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 text-[11px] font-medium whitespace-nowrap transition-colors duration-300 border border-white/10 cursor-pointer"
+              className="px-3 py-1 rounded-full bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-[11px] font-medium whitespace-nowrap transition-colors duration-300 border border-slate-200 shadow-sm cursor-pointer"
             >
               {prompt}
             </button>
@@ -355,20 +407,20 @@ export const ConciergeChatModal: React.FC<ConciergeChatModalProps> = ({
         </div>
 
         {/* Chat Input Form */}
-        <form onSubmit={handleSend} className="p-4 bg-[#080B11]/90 border-t border-white/10 flex items-center space-x-2">
+        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-200/80 flex items-center space-x-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Ask Concierge about ${trip ? trip.destination : 'your trip'}...`}
-            className="flex-1 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/50 transition-all duration-300"
+            className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 transition-all duration-300"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="px-4 py-3 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold transition-all duration-300 disabled:opacity-40 flex items-center space-x-1.5 cursor-pointer shadow-md"
+            className="px-4 py-3 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold transition-all duration-300 disabled:opacity-40 flex items-center space-x-1.5 cursor-pointer shadow-md shadow-rose-500/25"
           >
-            <Send className="w-4 h-4 text-slate-950" />
+            <Send className="w-4 h-4 text-white" />
           </button>
         </form>
 

@@ -20,6 +20,8 @@ export interface TripState {
   session_id: string;
   status: 'active' | 'past';
   isBookmarked?: boolean;
+  flights?: FlightOption[];
+  hotels?: HotelOption[];
 }
 
 export interface ChatMessage {
@@ -29,6 +31,7 @@ export interface ChatMessage {
   timestamp: string;
   status?: 'sending' | 'success' | 'error';
   itineraryUpdated?: boolean;
+  isInventoryUpdate?: boolean;
   updatedDaysSummary?: string;
   targetDayNumber?: number;
 }
@@ -65,7 +68,7 @@ export interface FlightOption {
   duration: string;
   price: string;
   stops: string;
-  class: 'Economy' | 'Business' | 'First';
+  class?: 'Economy' | 'Business' | 'First';
   departureAirport?: string;
   arrivalAirport?: string;
 }
