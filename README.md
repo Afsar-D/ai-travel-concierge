@@ -1,160 +1,206 @@
-# ✈️ AI Travel Concierge - Full Stack Enterprise Application
+# ✈️ ODYSSEY AI — Full Stack AI Travel Concierge
 
-[![Backend Build](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Frontend Build](https://img.shields.io/badge/Frontend-Vite%20%2B%20React%2019-61DAFB?style=flat&logo=react)](https://react.dev/)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite-61DAFB?style=flat&logo=react)](https://react.dev/)
 [![Deployment](https://img.shields.io/badge/Deployed%20on-Railway%20%26%20Vercel-000000?style=flat&logo=railway)](https://ai-travel-concierge.up.railway.app/)
-[![Pytest Coverage](https://img.shields.io/badge/Backend%20Tests-100%25%20Pass-brightgreen?style=flat&logo=pytest)](https://docs.pytest.org/)
-[![Vitest Coverage](https://img.shields.io/badge/Frontend%20Tests-100%25%20Pass-brightgreen?style=flat&logo=vitest)](https://vitest.dev/)
+[![Backend Tests](https://img.shields.io/badge/Backend%20Tests-Pytest%20100%25-brightgreen?style=flat&logo=pytest)](https://docs.pytest.org/)
+[![Frontend Tests](https://img.shields.io/badge/Frontend%20Tests-Vitest%2014%2F14-brightgreen?style=flat&logo=vitest)](https://vitest.dev/)
 
-An enterprise-grade, full-stack AI Travel Concierge platform featuring an interactive **React 19 + Vite** frontend and an asynchronous **FastAPI** backend powered by **LangGraph**, **Google Gemini 2.5 Flash**, **SQLModel (PostgreSQL / Supabase)**, and **Upstash Serverless Redis**.
-
----
-
-## 🌟 Project Overview
-
-The **AI Travel Concierge** empowers travelers to generate weather-aligned, budget-conscious travel itineraries and chat continuously with an intelligent AI concierge assistant for instant recommendations on flights, hotels, weather, and dining.
-
-### 🚀 Key Capabilities:
-* **Token Streaming & SSE UI**: Stream complete day-by-day itineraries and follow-up chat answers in real time using Server-Sent Events (SSE) for a fluid, instant response experience.
-* **Weather-Aligned Itineraries**: Dynamically fetches live Open-Meteo forecasts to schedule indoor cultural activities on rainy days and outdoor sightseeing on clear days.
-* **Dual Caching Layer**: Caches weather queries in **Upstash Redis RAM** with 24-hour TTL eviction, reducing API retrieval latencies to **<2ms**.
-* **Cloud Persistence & User Authentication**: Full user authentication (JWT Bearer Tokens + `passlib[bcrypt]` password hashing) and conversation session storage in **Supabase PostgreSQL** via `SQLModel` ORM (`asyncpg`).
-* **Accurate Budget Tracking**: Built-in pricing engine computing **Daily Activity Budget**, **Accommodation Nightly Rates $\times$ Nights**, and **Total Estimated Budget** tailored across Economy, Medium, and Luxury budget tiers.
-* **Dynamic Destination Imagery**: Features 35+ curated global destination cover photos with dynamic string-hashing fallbacks so every itinerary gets a unique cover photo.
+An enterprise-grade, full-stack AI Travel Concierge platform. **ODYSSEY AI** lets travelers generate weather-aware, budget-conscious day-by-day itineraries and chat continuously with an intelligent concierge for live flight options, hotel recommendations, weather forecasts, and custom itinerary adjustments.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## 🌟 Feature Highlights
 
-### 🎨 Frontend
-* **Framework**: React 19, TypeScript, Vite
-* **Styling**: TailwindCSS, Lucide Icons, Framer Motion
-* **Testing**: Vitest + React Testing Library (`vitest run` with 100% pass rate)
-
-### ⚙️ Backend
-* **Framework**: FastAPI (Python 3.11+ / 3.14 + Uvicorn)
-* **AI Agent Engine**: LangGraph & Google GenAI SDK (`gemini-2.5-flash`)
-* **Cloud Database**: PostgreSQL (Supabase Cloud / Railway Postgres) + `SQLModel` ORM (`asyncpg`)
-* **In-Memory Cache**: Upstash Serverless Redis
-* **Security & Auth**: JWT Tokens (`python-jose`), `bcrypt` password hashing
-* **Testing**: Pytest + HTTPX AsyncClient (`pytest` with 100% pass rate)
+- **AI-Generated Itineraries**: Powered by **Google Gemini 2.5 Flash** via the LangGraph agent workflow, producing structured, day-by-day activity plans with estimated costs tailored to Economy, Medium, or Luxury budgets.
+- **Live Flight Search**: SerpApi Google Flights integration (`flights.py`) retrieves real-time routes and pricing between origin and destination airports using IATA codes looked up from a local `airplanes.json` dataset.
+- **Live Hotel Search**: SerpApi Google Hotels integration (`hotels.py`) pulls current availability, ratings, amenities, and per-night pricing — persisted to the `hotel_booking` table in PostgreSQL.
+- **Weather-Aligned Scheduling**: Open-Meteo live forecasts schedule indoor cultural activities on rainy days and outdoor sightseeing on sunny days.
+- **Dual Caching Layer**: Upstash Serverless Redis caches weather results with 24-hour TTL eviction, reducing repeated API latency to **< 2 ms**.
+- **AI Concierge Chat**: Persistent multi-turn chat with flight/hotel query routing — Concierge automatically sends flight and hotel queries to the **Flights & Stays** tab without corrupting the day-by-day timeline.
+- **User Authentication**: Full JWT Bearer token auth (`python-jose`) with `passlib[bcrypt]` password hashing, secure registration and login.
+- **Cloud Persistence**: All sessions, messages, flights, and hotel bookings stored in **Supabase PostgreSQL** via `SQLModel` ORM with `asyncpg`.
+- **Cinematic UI**: Premium frosted-glass design theme (Crisp Pure White + Sunset Coral `#F43F5E`) with Lottie loading animations, panoramic destination photography, and smooth micro-animations.
 
 ---
 
-## 📂 Project Architecture
+## 🛠️ Tech Stack
+
+### 🎨 Frontend (React 19 + Vite)
+| Layer | Technology |
+|---|---|
+| Framework | React 19, TypeScript, Vite 8 |
+| Styling | TailwindCSS 4, Lucide Icons, Framer Motion |
+| Animations | `lottie-web` (Lottie JSON loading & error screens) |
+| Confetti | `canvas-confetti` (new trip creation celebration) |
+| Testing | Vitest 4 + React Testing Library (14/14 pass) |
+| Linting | Oxlint |
+
+### ⚙️ Backend (FastAPI + LangGraph)
+| Layer | Technology |
+|---|---|
+| Framework | FastAPI (Python 3.11+), Uvicorn |
+| AI Engine | LangGraph state graph + Google Gemini 2.5 Flash (`google-genai`) |
+| Flight Data | SerpApi Google Flights (`serpapi`) |
+| Hotel Data | SerpApi Google Hotels (`serpapi`) |
+| Weather Data | Open-Meteo geocoding + forecast API (`httpx`) |
+| Database | PostgreSQL / Supabase Cloud via `SQLModel` + `asyncpg` |
+| Cache | Upstash Serverless Redis (`upstash-redis`) |
+| Auth | JWT (`python-jose`), bcrypt (`passlib[bcrypt]`) |
+| Testing | Pytest + HTTPX AsyncClient |
+
+---
+
+## 📂 Project Structure
 
 ```text
 B/
-├── Procfile                     # Railway root deployment process configuration
-├── backend/                     # FastAPI Async Backend
-│   ├── Procfile                 # Railway subdirectory Procfile
-│   ├── requirements.txt         # Production dependencies
-│   ├── pyproject.toml           # Python environment specification
+├── Procfile                          # Railway root deployment entry
+├── test/
+│   └── test_backend_suite.py         # Pytest backend test suite
+│
+├── backend/
+│   ├── Procfile                      # Railway subdirectory Procfile
+│   ├── requirements.txt
+│   ├── pyproject.toml
 │   └── app/
+│       ├── app.py                    # FastAPI app factory & router registration
 │       ├── agent/
-│       │   ├── graph.py         # LangGraph state graph & Gemini agent workflows
-│       │   ├── state.py         # AgentState TypedDict schema
-│       │   └── tools.py         # Async tool wrappers for weather & search
+│       │   ├── graph.py              # LangGraph StateGraph (weather → flights → hotels → Gemini)
+│       │   ├── state.py              # AgentState TypedDict schema
+│       │   └── tools.py              # Async tool orchestration (weather, flights, hotels)
 │       ├── api/
-│       │   ├── auth.py          # User registration & JWT login routes
-│       │   ├── chat.py          # POST /api/chat streaming route & session persistence
-│       │   └── health.py        # Health check endpoint (/api/health)
+│       │   ├── auth.py               # POST /api/register  &  POST /api/login
+│       │   ├── chat.py               # POST /api/chat  &  GET /api/sessions  &  DELETE /api/sessions/{id}
+│       │   └── health.py             # GET /api/health
 │       ├── config/
-│       │   └── security.py      # Password hashing & JWT token handling
+│       │   └── security.py           # JWT creation & verification, password hashing
 │       ├── database/
-│       │   ├── models.py        # User, ChatSession, ChatMessages SQLModel schemas
-│       │   └── session.py       # AsyncEngine session factory (PostgreSQL / SQLite)
+│       │   ├── models.py             # User, ChatSession, ChatMessages, FlightBooking, HotelBooking
+│       │   └── session.py            # AsyncEngine session factory (PostgreSQL / SQLite fallback)
+│       ├── schema/
+│       │   ├── auth.py               # Pydantic request/response models for auth
+│       │   └── chat.py               # Pydantic request/response models for chat
 │       └── tools/
-│           ├── cache.py         # Upstash Redis async caching helpers
-│           └── weather.py       # Open-Meteo geocoding & weather forecast tool
+│           ├── weather.py            # Open-Meteo geocoding & 7-day forecast fetcher
+│           ├── flights.py            # SerpApi Google Flights + IATA code lookup (airplanes.json)
+│           ├── hotels.py             # SerpApi Google Hotels + DB persistence
+│           ├── cache.py              # Upstash Redis async helpers
+│           └── airplanes.json        # Local IATA airport code dataset
 │
-├── frontend/                    # React 19 + Vite User Interface
-│   ├── src/
-│   │   ├── components/          # React Components (TripPlanView, ConciergeChatModal, etc.)
-│   │   ├── utils/               # Itinerary parsers, budget matrices & theme utilities
-│   │   └── test/                # Vitest React UI test suite
-│   ├── package.json             # Frontend dependencies & test scripts
-│   └── vite.config.ts           # Vite build configuration
-│
-└── test/
-    └── test_backend_suite.py    # Complete FastAPI Pytest suite
+└── frontend/
+    ├── public/
+    │   ├── loading.json              # Lottie animation (Lottie v5, used in LoadingScreen)
+    │   ├── error.json                # Lottie animation (404 / error pages)
+    │   ├── favicon.svg
+    │   ├── compass.svg
+    │   └── icons.svg
+    └── src/
+        ├── App.tsx                   # Root app shell, routing, trip state & inventory nav
+        ├── components/
+        │   ├── LoadingScreen.tsx      # Lottie-animated initial loading screen
+        │   ├── LoginPage.tsx          # JWT login & registration form
+        │   ├── LandingPage.tsx        # Marketing landing / hero screen
+        │   ├── TripDashboard.tsx      # Panoramic trip selector with frosted-glass hero
+        │   ├── TripPlanView.tsx       # Day-by-day timeline + Flights & Stays tab
+        │   ├── ConciergeChatModal.tsx # Multi-turn AI chat with smart inventory routing
+        │   ├── CreateTripModal.tsx    # New trip wizard (origin, destination, dates, budget)
+        │   ├── ExportModal.tsx        # iCal / PDF export modal
+        │   ├── MarkdownView.tsx       # Markdown renderer for AI replies
+        │   ├── InventoryDeck.tsx      # Flight & hotel card deck component
+        │   ├── ChatWorkspace.tsx      # Chat workspace container
+        │   ├── Sidebar.tsx            # Navigation sidebar
+        │   ├── TripContextBar.tsx     # Active trip context bar
+        │   ├── ItineraryCanvas.tsx    # Day activity canvas
+        │   ├── TelemetryDrawer.tsx    # LangGraph node telemetry panel
+        │   ├── AuthErrorPage.tsx      # 401 / session expired error page
+        │   └── NotFound404Page.tsx    # 404 page with Lottie animation
+        ├── services/
+        │   └── api.ts                # Typed API client (chat, sessions, auth)
+        ├── types/
+        │   └── index.ts              # TripState, ChatMessage, FlightOption, HotelOption, ItineraryDay
+        └── utils/
+            ├── parser.ts             # Natural language flight & hotel parser (Gemini + SerpApi formats)
+            ├── itineraryParser.ts    # Markdown → ItineraryDay[] parser (flight-safe)
+            └── themeUtils.ts         # Destination theme palettes & background image mapping
 ```
 
 ---
 
-## ⚙️ Quick Start & Local Setup
+## ⚙️ Quick Start
 
-### 1. Prerequisites
-* **Python 3.11+**
-* **Node.js 18+**
+### Prerequisites
+- **Python 3.11+**
+- **Node.js 18+**
+- A **SERP_API_KEY** from [serpapi.com](https://serpapi.com/) for live flight and hotel data
+- A **GEMINI_API_KEY** from [Google AI Studio](https://aistudio.google.com/)
 
 ---
 
-### 2. Backend Setup
+### 1. Backend Setup
 
 ```bash
-# Navigate to backend directory
 cd backend
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Create .env configuration
-cat <<EOT > .env
+# Create environment configuration
+cat > .env <<EOT
 GEMINI_API_KEY="your_google_gemini_api_key"
+SERP_API_KEY="your_serpapi_key"
 JWT_SECRET="supersecretjwtkey123456789"
-DATABASE_URL="sqlite+aiosqlite:///./database.db"  # Or PostgreSQL connection URL
+DATABASE_URL="sqlite+aiosqlite:///./database.db"   # Or a PostgreSQL/Supabase URL
 UPSTASH_REDIS_REST_URL=""
 UPSTASH_REDIS_REST_TOKEN=""
 EOT
 
-# Run FastAPI development server
+# Start development server
 uvicorn app.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-*Interactive API Swagger Documentation is available at `http://localhost:8000/docs`.*
+> Interactive Swagger docs available at **http://localhost:8000/docs**
 
 ---
 
-### 3. Frontend Setup
+### 2. Frontend Setup
 
 ```bash
-# Navigate to frontend directory
 cd frontend
 
-# Install Node.js dependencies
+# Install dependencies
 npm install
 
-# Run frontend development server
+# Start development server
 npm run dev
 ```
 
-*The frontend application will run at `http://localhost:5173`.*
+> App runs at **http://localhost:5173**
 
 ---
 
-## 🧪 Test Suite Execution
+## 🧪 Running Tests
 
-Both frontend and backend test suites achieve **100% pass rates**:
+Both suites achieve **100% pass rates**.
 
-### Run Backend Tests (Pytest)
+### Backend — Pytest
 ```bash
-PYTHONPATH=backend pytest test/test_backend_suite.py
+PYTHONPATH=backend pytest test/test_backend_suite.py -v
 ```
-*Tests registration, login authentication, duplicate user checks, invalid passwords, JWT expiration, date order validators, and weather endpoints.*
+*Covers: user registration, JWT login, duplicate user rejection, invalid password, token expiry, date validation, weather endpoints.*
 
-### Run Frontend Tests (Vitest)
+### Frontend — Vitest (14 tests)
 ```bash
 cd frontend
 npm run test
 ```
-*Tests React UI login flows, trip setup modals, concierge chat rendering, error fallbacks, and budget breakdown calculations.*
+*Covers: login form flow, trip creation modal, concierge chat rendering, flight query routing to Flights & Stays tab, `trip.flights` direct display in TripPlanView, error page fallbacks, budget breakdown calculations.*
 
-### Run Frontend Production Build
+### Frontend — Production Build
 ```bash
 cd frontend
 npm run build
@@ -162,21 +208,63 @@ npm run build
 
 ---
 
-## ☁️ Deployment Guide
+## 🧠 How the AI Agent Works
 
-### Railway (Backend Deployment)
+```
+User Request
+     │
+     ▼
+ fetch_weather()          ← Open-Meteo geocoding + 7-day forecast (Redis cached)
+     │
+     ▼
+ fetch_flights()          ← SerpApi Google Flights (IATA lookup via airplanes.json)
+     │
+     ▼
+ fetch_hotels()           ← SerpApi Google Hotels (results persisted to DB)
+     │
+     ▼
+ generate_itinerary()     ← Gemini 2.5 Flash with full trip context prompt
+     │
+     ▼
+ Structured day-by-day itinerary returned via /api/chat
+```
 
-1. Connect your repository to **Railway**.
-2. Set **Root Directory** in Railway Service Settings to `backend` (or leave as root `/`).
-3. Set **Start Command** to:
+The **ConciergeChatModal** on the frontend uses keyword detection to separate follow-up queries:
+- **Flight / hotel queries** → parsed via `parser.ts`, stored in `trip.flights` / `trip.hotels`, routed to the **Flights & Stays** tab — *never appended to the timeline description*.
+- **Itinerary modification queries** → parsed via `itineraryParser.ts`, merged into the day-by-day timeline.
+- **Weather / general queries** → displayed as a standard AI reply with no state mutation.
+
+---
+
+## ☁️ Deployment
+
+### Railway (Backend)
+
+1. Connect repo to [Railway](https://railway.app/).
+2. Set **Root Directory** to `backend` (or leave as `/`).
+3. Set **Start Command**:
    ```bash
    uvicorn app.app:app --host 0.0.0.0 --port $PORT
    ```
-4. Set Railway Environment Variables:
-   - `GEMINI_API_KEY`: Your Gemini API key
-   - `JWT_SECRET`: Secret JWT key
-   - `DATABASE_URL`: PostgreSQL connection URL (or defaults to SQLite)
-5. Set **Target Port** to `8080` (or dynamic `$PORT`).
+4. Set environment variables:
+   | Variable | Description |
+   |---|---|
+   | `GEMINI_API_KEY` | Google Gemini API key |
+   | `SERP_API_KEY` | SerpApi key for flights & hotels |
+   | `JWT_SECRET` | Secret for JWT signing |
+   | `DATABASE_URL` | PostgreSQL connection string |
+   | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (optional) |
+   | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token (optional) |
+
+### Vercel (Frontend)
+
+1. Import the `frontend/` folder as a Vercel project.
+2. Set **Framework Preset** to `Vite`.
+3. Set **Root Directory** to `frontend`.
+4. Add environment variable:
+   | Variable | Description |
+   |---|---|
+   | `VITE_API_BASE_URL` | Your Railway backend URL |
 
 ---
 
