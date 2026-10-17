@@ -17,10 +17,11 @@ app = FastAPI(
     summary="Provide Guidance about travelling and your trips",
     lifespan=lifespan,
 )
+origins = ["http://localhost", "http://127.0.0.1", "http://129.225.84.235"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -29,6 +30,7 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(health.router)
 app.include_router(weather.router)
+
 
 @app.get("/")
 def hello():
