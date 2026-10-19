@@ -13,6 +13,7 @@ import {
   Plane, 
   Feather, 
   MessageSquare, 
+  Wallet,
   X
 } from 'lucide-react';
 import type { TripState, ItineraryDay, Activity, FlightOption, HotelOption } from '../types';
@@ -61,6 +62,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [completedStops, setCompletedStops] = useState<Record<string, boolean>>({});
   const [bespokeStopText, setBespokeStopText] = useState('');
+  const [budgetScope, setBudgetScope] = useState<'per_person' | 'party'>('per_person');
 
   // Dynamic real-world local time for the destination
   const [timeInfo, setTimeInfo] = useState(() => getDestinationTimeInfo(trip.destination, trip.country));
@@ -91,7 +93,7 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   const activeDay = days[currentDayIndex] || days[0];
 
   // Flights & Hotels extraction
-  const parsedData = parseBackendReply(trip.description || '', trip.origin, trip.destination);
+  const parsedData = parseBackendReply(trip.description || '', trip.origin, trip.destination, trip.budget);
   const displayFlights: FlightOption[] = (trip.flights && trip.flights.length > 0) ? trip.flights : parsedData.flights;
   const displayHotels: HotelOption[] = (trip.hotels && trip.hotels.length > 0) ? trip.hotels : parsedData.hotels;
 
@@ -181,34 +183,63 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
       }
     }
 
-    // Hotel total: calculate only if hotels are present in dossier
+    // Hotel total: calculate based on tier-aligned nightly rates
     let hotelTotal = 0;
     const nightsCount = Math.max(1, days.length > 1 ? days.length - 1 : 1);
     if (displayHotels && displayHotels.length > 0) {
       const hotelNums = (displayHotels[0].pricePerNight || '').match(/\d[\d,]*/g);
       if (hotelNums && hotelNums.length > 0) {
-        const nightlyRate = parseInt(hotelNums[0].replace(/,/g, ''), 10) || 0;
+        let nightlyRate = parseInt(hotelNums[0].replace(/,/g, ''), 10) || 0;
+        // Cap according to budget tier so luxury rates don't artificially bloat budget trips
+        if (trip.budget === 'low') nightlyRate = Math.min(nightlyRate, 2200);
+        else if (trip.budget === 'medium') nightlyRate = Math.min(nightlyRate, 5200);
         hotelTotal = nightlyRate * nightsCount;
       }
     }
 
-    const totalEst = activityTotal + flightTotal + hotelTotal;
+    const guestCount = Math.max(1, trip.guest_count || 1);
+    const roomsCount = Math.ceil(guestCount / 2);
     const daysCount = Math.max(1, days.length);
-    const dailyEst = daysCount > 0 ? Math.round(totalEst / daysCount) : 0;
+
+    // Per Person math:
+    // Itinerary activities/meals represent per-person costs; hotel is split among travelers
+    const activityPerPerson = activityTotal;
+    const hotelPerPerson = Math.round(hotelTotal / guestCount);
+    const dailyPerPerson = daysCount > 0 ? Math.round(activityPerPerson / daysCount) : 0;
+    const totalPerPerson = activityPerPerson + hotelPerPerson;
+
+    // Full Party math (Combined for all travelers):
+    const activityGroup = activityTotal * guestCount;
+    const hotelGroup = hotelTotal * roomsCount;
+    const dailyGroup = daysCount > 0 ? Math.round(activityGroup / daysCount) : 0;
+    const totalGroup = activityGroup + hotelGroup;
+
+    // Active based on toggle:
+    const isParty = budgetScope === 'party' && guestCount > 1;
+    const dailyEst = isParty ? dailyGroup : dailyPerPerson;
+    const totalEst = isParty ? totalGroup : totalPerPerson;
+    const activeHotel = isParty ? hotelGroup : hotelPerPerson;
+    const activeDining = isParty ? diningTotal * guestCount : diningTotal;
+    const activeTransit = isParty ? transitActTotal * guestCount : transitActTotal;
 
     // Allocation percentages (real dynamic math)
     const totalRef = totalEst > 0 ? totalEst : 1;
-    const stayPercent = totalEst > 0 ? Math.round((hotelTotal / totalRef) * 100) : 0;
-    const transitPercent = totalEst > 0 ? Math.round(((flightTotal + transitActTotal) / totalRef) * 100) : 0;
-    const diningPercent = totalEst > 0 ? Math.round((diningTotal / totalRef) * 100) : 0;
-    const culturePercent = totalEst > 0 ? Math.max(0, 100 - stayPercent - transitPercent - diningPercent) : 0;
+    const stayPercent = totalEst > 0 ? Math.round((activeHotel / totalRef) * 100) : 0;
+    const diningPercent = totalEst > 0 ? Math.round((activeDining / totalRef) * 100) : 0;
+    const transitPercent = totalEst > 0 ? Math.round((activeTransit / totalRef) * 100) : 0;
+    const culturePercent = totalEst > 0 ? Math.max(0, 100 - stayPercent - diningPercent - transitPercent) : 0;
 
     return { 
-      activityTotal, 
+      activityTotal: isParty ? activityGroup : activityPerPerson, 
       flightTotal, 
-      hotelTotal, 
+      hotelTotal: activeHotel, 
+      nightsCount,
+      guestCount,
+      isParty,
       totalEst, 
       dailyEst,
+      dailyPerPerson,
+      totalPerPerson,
       stayPercent,
       transitPercent,
       diningPercent,
@@ -229,10 +260,10 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-screen bg-[#FAF9F6] text-[#151516] font-sans antialiased selection:bg-[#EBE7DC] selection:text-[#151516] overflow-x-hidden">
+    <div className="relative min-h-screen min-h-[100dvh] w-full bg-[#FAF9F6] text-[#151516] font-sans antialiased selection:bg-[#EBE7DC] selection:text-[#151516] overflow-x-hidden">
       
       {/* ================= 1. AMBIENT BACKDROP ================= */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full w-full [transform:translateZ(0)]">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-scale-subtle opacity-95"
           style={{ backgroundImage: `url('${tripBg}')` }}
@@ -559,58 +590,123 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
               </div>
 
               {/* Estimated Budget Tracker Card */}
-              <div className="paper-panel rounded-3xl p-6 space-y-4 border border-[#E8E4DA]">
-                <div className="flex items-baseline justify-between pb-2 border-b border-[#E8E4DA]">
-                  <span className="text-[10px] font-mono tracking-editorial-mono uppercase text-[#71717A] font-semibold">
-                    Estimated Budget Tracker
-                  </span>
-                  <span className="text-xs font-mono text-[#525258]">
-                    {budgetMetrics.totalEst > 0 ? `${days.length} Days Planned` : 'No Expenses Logged'}
-                  </span>
+              <div className="paper-panel rounded-3xl p-5 sm:p-6 space-y-4 sm:space-y-5 border border-[#E8E4DA]">
+                {/* Header Row: Title & Travelers badge */}
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E8E4DA]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Wallet className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
+                    <span className="text-[10px] sm:text-[11px] font-mono tracking-editorial-mono uppercase text-[#71717A] font-semibold truncate">
+                      Estimated Budget Tracker
+                    </span>
+                  </div>
+                  {budgetMetrics.guestCount > 1 ? (
+                    <span className="text-[9px] sm:text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#E8E5DD] text-[#38383C] font-semibold whitespace-nowrap shrink-0">
+                      {budgetMetrics.guestCount} Travelers
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-[#71717A] whitespace-nowrap shrink-0">
+                      {days.length} Days Planned
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono text-[#A1A1AA]">Est. Daily Budget</span>
-                    <p className="font-serif text-2xl font-normal text-[#151516]">
+                {/* Scope Selector: Each Person vs Entire Group (Full-width segmented pill) */}
+                {budgetMetrics.guestCount > 1 && (
+                  <div className="grid grid-cols-2 p-1 rounded-xl bg-[#F4F1EA] border border-[#E8E4DA] text-xs font-mono">
+                    <button
+                      type="button"
+                      onClick={() => setBudgetScope('per_person')}
+                      className={`py-1.5 px-2.5 rounded-lg text-center transition cursor-pointer whitespace-nowrap text-[11px] font-medium ${
+                        !budgetMetrics.isParty 
+                          ? 'bg-[#151516] text-white shadow-sm' 
+                          : 'text-[#71717A] hover:text-[#151516]'
+                      }`}
+                    >
+                      Each Person
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBudgetScope('party')}
+                      className={`py-1.5 px-2.5 rounded-lg text-center transition cursor-pointer whitespace-nowrap text-[11px] font-medium ${
+                        budgetMetrics.isParty 
+                          ? 'bg-[#151516] text-white shadow-sm' 
+                          : 'text-[#71717A] hover:text-[#151516]'
+                      }`}
+                    >
+                      All {budgetMetrics.guestCount} Guests
+                    </button>
+                  </div>
+                )}
+
+                {/* Stat Numbers: 2 balanced inset boxes */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                  <div className="paper-inset p-3 sm:p-3.5 rounded-2xl border border-[#E8E4DA]">
+                    <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-wider text-[#A1A1AA] block">
+                      Est. Daily Budget
+                    </span>
+                    <p className="font-serif text-lg sm:text-2xl font-normal text-[#151516] mt-0.5">
                       ₹{budgetMetrics.dailyEst.toLocaleString()}
                     </p>
+                    <span className="text-[10px] font-mono text-[#71717A] block mt-0.5 truncate">
+                      {budgetMetrics.isParty ? `All ${budgetMetrics.guestCount} Guests / Day` : 'Per Person / Day'}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-mono text-[#A1A1AA]">Total Est. Budget</span>
-                    <p className="font-serif text-2xl font-normal text-[#71717A]">
+
+                  <div className="paper-inset p-3 sm:p-3.5 rounded-2xl border border-[#E8E4DA]">
+                    <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-wider text-[#A1A1AA] block">
+                      Total Est. Budget
+                    </span>
+                    <p className="font-serif text-lg sm:text-2xl font-normal text-[#151516] mt-0.5">
                       ₹{budgetMetrics.totalEst.toLocaleString()}
                     </p>
+                    <span className="text-[10px] font-mono text-[#71717A] block mt-0.5 truncate">
+                      {budgetMetrics.isParty ? `Total for ${budgetMetrics.guestCount} Guests` : `Individual Share (${days.length}d)`}
+                    </span>
                   </div>
                 </div>
 
                 {/* Allocation Progress Bar */}
-                <div className="w-full h-1.5 rounded-full bg-[#E8E5DD] overflow-hidden flex">
-                  {budgetMetrics.totalEst > 0 ? (
-                    <>
-                      {budgetMetrics.stayPercent > 0 && (
-                        <div className="bg-[#151516] h-full" style={{ width: `${budgetMetrics.stayPercent}%` }} title={`Sanctuary Stays: ${budgetMetrics.stayPercent}%`} />
-                      )}
-                      {budgetMetrics.diningPercent > 0 && (
-                        <div className="bg-[#9A5B43] h-full" style={{ width: `${budgetMetrics.diningPercent}%` }} title={`Dining: ${budgetMetrics.diningPercent}%`} />
-                      )}
-                      {budgetMetrics.transitPercent > 0 && (
-                        <div className="bg-[#3D4536] h-full" style={{ width: `${budgetMetrics.transitPercent}%` }} title={`Transit & Flights: ${budgetMetrics.transitPercent}%`} />
-                      )}
-                      {budgetMetrics.culturePercent > 0 && (
-                        <div className="bg-[#71717A] h-full" style={{ width: `${budgetMetrics.culturePercent}%` }} title={`Culture & Ateliers: ${budgetMetrics.culturePercent}%`} />
-                      )}
-                    </>
-                  ) : (
-                    <div className="bg-[#E8E5DD] h-full w-full" />
-                  )}
-                </div>
+                <div className="space-y-2 pt-1">
+                  <div className="w-full h-2 rounded-full bg-[#E8E5DD] overflow-hidden flex shadow-inner">
+                    {budgetMetrics.totalEst > 0 ? (
+                      <>
+                        {budgetMetrics.stayPercent > 0 && (
+                          <div className="bg-[#151516] h-full transition-all duration-300" style={{ width: `${budgetMetrics.stayPercent}%` }} title={`Sanctuary Stays: ${budgetMetrics.stayPercent}%`} />
+                        )}
+                        {budgetMetrics.diningPercent > 0 && (
+                          <div className="bg-[#9A5B43] h-full transition-all duration-300" style={{ width: `${budgetMetrics.diningPercent}%` }} title={`Dining: ${budgetMetrics.diningPercent}%`} />
+                        )}
+                        {budgetMetrics.culturePercent > 0 && (
+                          <div className="bg-[#71717A] h-full transition-all duration-300" style={{ width: `${budgetMetrics.culturePercent}%` }} title={`Culture & Ateliers: ${budgetMetrics.culturePercent}%`} />
+                        )}
+                        {budgetMetrics.transitPercent > 0 && (
+                          <div className="bg-[#3D4536] h-full transition-all duration-300" style={{ width: `${budgetMetrics.transitPercent}%` }} title={`Local Transit: ${budgetMetrics.transitPercent}%`} />
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-[#E8E5DD] h-full w-full" />
+                    )}
+                  </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-[#525258]">
-                  <div>• Sanctuary Stay ({budgetMetrics.stayPercent}%)</div>
-                  <div>• Dining ({budgetMetrics.diningPercent}%)</div>
-                  <div>• Transit & Flights ({budgetMetrics.transitPercent}%)</div>
-                  <div>• Ateliers & Culture ({budgetMetrics.culturePercent}%)</div>
+                  {/* Legend with colored indicator dots */}
+                  <div className="grid grid-cols-2 gap-2 pt-0.5 text-[10px] font-mono text-[#525258]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#151516] shrink-0" />
+                      <span className="truncate">Stays ({budgetMetrics.stayPercent}%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#9A5B43] shrink-0" />
+                      <span className="truncate">Dining ({budgetMetrics.diningPercent}%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#71717A] shrink-0" />
+                      <span className="truncate">Culture ({budgetMetrics.culturePercent}%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3D4536] shrink-0" />
+                      <span className="truncate">Transit ({budgetMetrics.transitPercent}%)</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

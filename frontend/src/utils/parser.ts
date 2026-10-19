@@ -1,4 +1,4 @@
-import type { FlightOption, HotelOption } from '../types';
+import type { FlightOption, HotelOption, BudgetTier } from '../types';
 
 export interface ParsedBackendData {
   flights: FlightOption[];
@@ -6,13 +6,23 @@ export interface ParsedBackendData {
   itinerarySummary: string;
 }
 
-export function parseBackendReply(reply: string, origin: string, destination: string): ParsedBackendData {
+export function parseBackendReply(
+  reply: string, 
+  origin: string, 
+  destination: string,
+  budgetTier: BudgetTier = 'medium'
+): ParsedBackendData {
   const flights: FlightOption[] = [];
   const hotels: HotelOption[] = [];
 
   if (!reply) {
     return { flights, hotels, itinerarySummary: '' };
   }
+
+  // Tier-aligned default hotel price
+  let defaultHotelRate = '₹3,800';
+  if (budgetTier === 'low') defaultHotelRate = '₹1,650';
+  else if (budgetTier === 'high') defaultHotelRate = '₹11,500';
 
   // 1. Multiline SerpApi Hotel Parsing (Format: HotelName\n - Rating : X\n - Rate Per Night : Y\n - Amenities : Z)
   const hotelMatches = reply.match(/([^\n]+)\n\s*-\s*Rating\s*:\s*([\d.]+)(?:\n\s*-\s*Rate Per Night\s*:\s*([^/\-\n]+))?(?:\n\s*-\s*Amenities\s*:\s*([^\n]+))?/gi);
@@ -35,7 +45,7 @@ export function parseBackendReply(reply: string, origin: string, destination: st
           const amenitiesMatch = fullStr.match(/Amenities\s*:\s*([^\n]+)/i);
 
           const rating = ratingMatch ? parseFloat(ratingMatch[1]) : 4.5;
-          const rate = rateMatch ? (rateMatch[1] ? rateMatch[1].trim() : rateMatch[0].trim()) : '₹6,500';
+          const rate = rateMatch ? (rateMatch[1] ? rateMatch[1].trim() : rateMatch[0].trim()) : defaultHotelRate;
           const amenitiesStr = amenitiesMatch ? amenitiesMatch[1].trim() : 'Free Wi-Fi, Air Conditioning, Restaurant';
           const amenities = amenitiesStr.split(',').map(a => a.trim()).slice(0, 5);
 
@@ -172,7 +182,13 @@ export function parseBackendReply(reply: string, origin: string, destination: st
                          trimmed.match(/(?:₹|INR|\$)\s*[\d,]+/i);
       let price = priceMatch ? (priceMatch[1] ? priceMatch[1].trim() : priceMatch[0].trim()) : '';
       if (!price || !/\d/.test(price)) {
-        price = isOutbound ? '₹24,850' : '₹26,400';
+        if (budgetTier === 'low') {
+          price = isOutbound ? '₹4,850' : '₹5,200';
+        } else if (budgetTier === 'high') {
+          price = isOutbound ? '₹22,500' : '₹24,800';
+        } else {
+          price = isOutbound ? '₹8,450' : '₹9,100';
+        }
       } else if (!price.includes('₹') && !price.includes('$')) {
         price = `₹${price}`;
       }
@@ -226,7 +242,7 @@ export function parseBackendReply(reply: string, origin: string, destination: st
           const priceMatch = trimmed.match(/(?:price|rate|cost|per night)\s*:\s*([^/\-\n,;]+)/i) || trimmed.match(/(?:₹|INR|\$)\s*[\d,]+/i);
           
           const rating = ratingMatch ? parseFloat(ratingMatch[1]) : 4.7;
-          let price = priceMatch ? (priceMatch[1] ? priceMatch[1].trim() : priceMatch[0].trim()) : '₹12,500';
+          let price = priceMatch ? (priceMatch[1] ? priceMatch[1].trim() : priceMatch[0].trim()) : defaultHotelRate;
           if (!price.includes('₹') && !price.includes('$')) price = `₹${price}`;
 
           hotels.push({

@@ -133,17 +133,17 @@ export const TripDashboard: React.FC<TripDashboardProps> = ({
   const activeBg = activeTrip?.bgImage || (trips[0] ? (trips[0].bgImage || getDestinationBackgroundImage(trips[0].destination)) : "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=2600&q=85");
 
   return (
-    <div className="relative min-h-screen w-screen bg-[#FAF9F6] text-[#151516] font-sans antialiased selection:bg-[#EBE7DC] selection:text-[#151516] overflow-x-hidden">
+    <div className="relative min-h-screen min-h-[100dvh] w-full bg-[#FAF9F6] text-[#151516] font-sans antialiased selection:bg-[#EBE7DC] selection:text-[#151516] overflow-x-hidden">
       
       {/* ================= 1. AMBIENT PHOTOGRAPHY BACKDROP (SHARED CROSSFADE) ================= */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full w-full [transform:translateZ(0)]">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeBg}
-            initial={{ opacity: 0, scale: 1.03 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
             className="absolute inset-0 bg-cover bg-center bg-scale-subtle"
             style={{ backgroundImage: `url('${activeBg}')` }}
           />
