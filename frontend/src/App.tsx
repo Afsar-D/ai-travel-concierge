@@ -15,11 +15,14 @@ import type { UserProfile, TripState, ItineraryDay } from './types';
 import { parseMarkdownToItinerary } from './utils/itineraryParser';
 import { parseBackendReply } from './utils/parser';
 import { fetchUserSessions, deleteUserSession } from './services/api';
-import { getDestinationBackgroundImage } from './utils/themeUtils';
+import { getDestinationBackgroundImage, resolveDestinationCountry } from './utils/themeUtils';
 
 const sanitizeTripData = (t: TripState): TripState => {
+  const { city, country } = resolveDestinationCountry(t.destination, t.country);
   const cleaned: TripState = {
     ...t,
+    destination: city || t.destination,
+    country: country || (t.country && t.country.toLowerCase() !== t.destination.toLowerCase() ? t.country : ''),
     bgImage: t.bgImage || getDestinationBackgroundImage(t.destination)
   };
 
@@ -42,10 +45,17 @@ const sanitizeTripData = (t: TripState): TripState => {
 export function App() {
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
-      const token = localStorage.getItem('odyssey_token');
+      const token = localStorage.getItem('laughtale_token');
       if (!token) return null;
-      const stored = localStorage.getItem('odyssey_user');
-      return stored ? JSON.parse(stored) : null;
+      const stored = localStorage.getItem('laughtale_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (!u.avatar) {
+          u.avatar = localStorage.getItem(`laughtale_avatar_${u.email}`) || '/man.svg';
+        }
+        return u;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -83,10 +93,10 @@ export function App() {
       } catch {}
     };
 
-    window.addEventListener('odyssey_auth_error', handleAuthErrorEvent);
+    window.addEventListener('laughtale_auth_error', handleAuthErrorEvent);
     window.addEventListener('popstate', handlePopState);
     return () => {
-      window.removeEventListener('odyssey_auth_error', handleAuthErrorEvent);
+      window.removeEventListener('laughtale_auth_error', handleAuthErrorEvent);
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
@@ -97,20 +107,52 @@ export function App() {
 
   const getTripStorageKey = (userEmail?: string | null) => {
     if (userEmail) {
-      return `odyssey_trips_${userEmail.toLowerCase().trim()}`;
+      return `laughtale_trips_${userEmail.toLowerCase().trim()}`;
     }
-    return 'odyssey_trips';
+    return 'laughtale_trips';
+  };
+
+  const getBookmarkStorageKey = (userEmail?: string | null) => {
+    if (userEmail) {
+      return `laughtale_bookmarks_${userEmail.toLowerCase().trim()}`;
+    }
+    return 'laughtale_bookmarks_guest';
+  };
+
+  const getStoredBookmarks = (userEmail?: string | null): Set<string> => {
+    try {
+      const raw = localStorage.getItem(getBookmarkStorageKey(userEmail));
+      if (raw) {
+        return new Set(JSON.parse(raw));
+      }
+    } catch {}
+    return new Set();
+  };
+
+  const saveStoredBookmarks = (userEmail: string | null | undefined, bookmarkedIds: Set<string>) => {
+    try {
+      localStorage.setItem(getBookmarkStorageKey(userEmail), JSON.stringify(Array.from(bookmarkedIds)));
+    } catch {}
   };
 
   const [trips, setTrips] = useState<TripState[]>(() => {
     try {
-      const storedUser = localStorage.getItem('odyssey_user');
+      const storedUser = localStorage.getItem('laughtale_user');
       const email = storedUser ? JSON.parse(storedUser)?.email : null;
       const key = getTripStorageKey(email);
       const stored = localStorage.getItem(key);
+      const bookmarks = getStoredBookmarks(email);
       if (stored) {
         const parsed: TripState[] = JSON.parse(stored);
-        return parsed.map(sanitizeTripData);
+        return parsed.map(t => {
+          const sanitized = sanitizeTripData(t);
+          const isBookmarked = bookmarks.has(t.id) || (t.session_id ? bookmarks.has(t.session_id) : false) || !!t.isBookmarked;
+          if (isBookmarked) {
+            if (t.id) bookmarks.add(t.id);
+            if (t.session_id) bookmarks.add(t.session_id);
+          }
+          return { ...sanitized, isBookmarked };
+        });
       }
       return [];
     } catch {
@@ -124,13 +166,23 @@ export function App() {
     if (user) {
       setIsInitialLoading(true);
       const storageKey = getTripStorageKey(user.email);
+      const bookmarks = getStoredBookmarks(user.email);
       
       // Load user-scoped local trips first
       try {
         const stored = localStorage.getItem(storageKey);
         if (stored) {
-          const parsed: TripState[] = JSON.parse(stored).map(sanitizeTripData);
+          const parsed: TripState[] = (JSON.parse(stored) as TripState[]).map((t: TripState) => {
+            const sanitized = sanitizeTripData(t);
+            const isBookmarked = bookmarks.has(t.id) || (t.session_id ? bookmarks.has(t.session_id) : false) || !!t.isBookmarked;
+            if (isBookmarked) {
+              if (t.id) bookmarks.add(t.id);
+              if (t.session_id) bookmarks.add(t.session_id);
+            }
+            return { ...sanitized, isBookmarked };
+          });
           setTrips(parsed);
+          saveStoredBookmarks(user.email, bookmarks);
           if (parsed.length > 0) {
             setActiveTrip(parsed[0]);
             setItineraryDays(parseMarkdownToItinerary(parsed[0].description, parsed[0].destination, parsed[0].start_date, parsed[0].budget));
@@ -149,7 +201,7 @@ export function App() {
 
       fetchUserSessions()
         .then(remoteTrips => {
-          if (!localStorage.getItem('odyssey_token')) {
+          if (!localStorage.getItem('laughtale_token')) {
             setUser(null);
             return;
           }
@@ -176,9 +228,28 @@ export function App() {
                 return !remoteKeys.has(pt.id) && !remoteKeys.has(pt.session_id) && !remoteKeys.has(destKey);
               });
 
+              // Gather bookmarks from local storage and prev state
+              const userBookmarks = getStoredBookmarks(user?.email);
+              prev.forEach(pt => {
+                if (pt.isBookmarked) {
+                  if (pt.id) userBookmarks.add(pt.id);
+                  if (pt.session_id) userBookmarks.add(pt.session_id);
+                }
+              });
+
               const cleanRemote = remoteTrips.map(sanitizeTripData);
 
-              const merged = [...cleanRemote, ...localOnly];
+              const merged = [...cleanRemote, ...localOnly].map(t => {
+                const isBookmarked = userBookmarks.has(t.id) || (t.session_id ? userBookmarks.has(t.session_id) : false) || !!t.isBookmarked;
+                if (isBookmarked) {
+                  if (t.id) userBookmarks.add(t.id);
+                  if (t.session_id) userBookmarks.add(t.session_id);
+                }
+                return { ...t, isBookmarked };
+              });
+
+              saveStoredBookmarks(user?.email, userBookmarks);
+
               try {
                 localStorage.setItem(storageKey, JSON.stringify(merged));
               } catch {}
@@ -201,7 +272,7 @@ export function App() {
 
   const [activeTrip, setActiveTrip] = useState<TripState | null>(() => {
     try {
-      const storedUser = localStorage.getItem('odyssey_user');
+      const storedUser = localStorage.getItem('laughtale_user');
       const email = storedUser ? JSON.parse(storedUser)?.email : null;
       const key = getTripStorageKey(email);
       const storedTrips = localStorage.getItem(key);
@@ -225,12 +296,22 @@ export function App() {
   const handleLogin = (userProfile: UserProfile) => {
     setUser(userProfile);
     try {
-      localStorage.setItem('odyssey_user', JSON.stringify(userProfile));
+      localStorage.setItem('laughtale_user', JSON.stringify(userProfile));
       const key = getTripStorageKey(userProfile.email);
       const stored = localStorage.getItem(key);
+      const bookmarks = getStoredBookmarks(userProfile.email);
       if (stored) {
-        const parsed: TripState[] = JSON.parse(stored);
+        const parsed: TripState[] = (JSON.parse(stored) as TripState[]).map((t: TripState) => {
+          const sanitized = sanitizeTripData(t);
+          const isBookmarked = bookmarks.has(t.id) || (t.session_id ? bookmarks.has(t.session_id) : false) || !!t.isBookmarked;
+          if (isBookmarked) {
+            if (t.id) bookmarks.add(t.id);
+            if (t.session_id) bookmarks.add(t.session_id);
+          }
+          return { ...sanitized, isBookmarked };
+        });
         setTrips(parsed);
+        saveStoredBookmarks(userProfile.email, bookmarks);
         if (parsed.length > 0) {
           setActiveTrip(parsed[0]);
           setItineraryDays(parseMarkdownToItinerary(parsed[0].description, parsed[0].destination, parsed[0].start_date, parsed[0].budget));
@@ -256,9 +337,9 @@ export function App() {
     setActiveTrip(null);
     setItineraryDays([]);
     try {
-      localStorage.removeItem('odyssey_user');
-      localStorage.removeItem('odyssey_token');
-      localStorage.removeItem('odyssey_trips');
+      localStorage.removeItem('laughtale_user');
+      localStorage.removeItem('laughtale_token');
+      localStorage.removeItem('laughtale_trips');
       if (currentEmail) {
         localStorage.removeItem(getTripStorageKey(currentEmail));
       }
@@ -281,7 +362,31 @@ export function App() {
 
   const handleBookmarkTrip = (tripId: string) => {
     setTrips(prev => {
-      const updated = prev.map(t => t.id === tripId ? { ...t, isBookmarked: !t.isBookmarked } : t);
+      const bookmarks = getStoredBookmarks(user?.email);
+      prev.forEach(t => {
+        if (t.isBookmarked) {
+          if (t.id) bookmarks.add(t.id);
+          if (t.session_id) bookmarks.add(t.session_id);
+        }
+      });
+
+      const updated = prev.map(t => {
+        if (t.id === tripId || (t.session_id && t.session_id === tripId)) {
+          const nextState = !t.isBookmarked;
+          if (nextState) {
+            if (t.id) bookmarks.add(t.id);
+            if (t.session_id) bookmarks.add(t.session_id);
+          } else {
+            if (t.id) bookmarks.delete(t.id);
+            if (t.session_id) bookmarks.delete(t.session_id);
+          }
+          return { ...t, isBookmarked: nextState };
+        }
+        return t;
+      });
+
+      saveStoredBookmarks(user?.email, bookmarks);
+
       try {
         localStorage.setItem(getTripStorageKey(user?.email), JSON.stringify(updated));
       } catch (e) {}
@@ -290,6 +395,13 @@ export function App() {
   };
 
   const handleCreateTrip = (newTrip: TripState) => {
+    const bookmarks = getStoredBookmarks(user?.email);
+    if (newTrip.isBookmarked) {
+      if (newTrip.id) bookmarks.add(newTrip.id);
+      if (newTrip.session_id) bookmarks.add(newTrip.session_id);
+      saveStoredBookmarks(user?.email, bookmarks);
+    }
+
     setTrips(prev => {
       const filtered = prev.filter(t => 
         t.id !== newTrip.id && 
@@ -379,8 +491,8 @@ export function App() {
           setAuthError(null);
           setUser(null);
           try {
-            localStorage.removeItem('odyssey_token');
-            localStorage.removeItem('odyssey_user');
+            localStorage.removeItem('laughtale_token');
+            localStorage.removeItem('laughtale_user');
           } catch {}
         }}
       />
@@ -416,7 +528,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-rose-500/20">
+    <div className="min-h-screen w-screen bg-[#FAF9F6] text-[#151516] font-sans antialiased overflow-x-hidden selection:bg-[#EBE7DC] selection:text-[#151516]">
       
       {viewMode === 'dashboard' ? (
         <TripDashboard
@@ -434,6 +546,8 @@ export function App() {
       ) : activeTrip ? (
         <TripPlanView
           trip={activeTrip}
+          trips={trips}
+          onSelectTrip={handleSelectTrip}
           days={itineraryDays}
           selectedDayIndex={selectedTimelineDayIndex}
           onSelectDayIndex={setSelectedTimelineDayIndex}
@@ -444,6 +558,7 @@ export function App() {
           onOpenConciergeChat={() => setIsConciergeOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
           onDeleteTrip={handleDeleteTrip}
+          onUpdateItinerary={handleUpdateItinerary}
         />
       ) : (
         <NotFound404Page

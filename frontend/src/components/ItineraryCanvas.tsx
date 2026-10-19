@@ -40,6 +40,17 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
     let activityTotal = 0;
     days.forEach(day => {
       day.activities.forEach(act => {
+        const costStr = (act.estimatedCost || '').toLowerCase().trim();
+        const isFree = 
+          costStr.includes('free') || 
+          costStr.includes('complimentary') || 
+          costStr.includes('included') || 
+          costStr.includes('no charge') ||
+          costStr === '-' || 
+          costStr === 'n/a' ||
+          !costStr;
+        if (isFree) return;
+
         const numbers = act.estimatedCost.match(/\d[\d,]*/g);
         if (numbers && numbers.length > 0) {
           const parsedNums = numbers.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n));
@@ -81,7 +92,7 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
   const getCategoryBadgeClass = (category: Activity['category']) => {
     switch (category) {
       case 'Dining':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+        return 'bg-cyan-500/10 text-[#0891B2] dark:text-[#38BDF8] border-[#06B6D4]/30';
       case 'Culture':
         return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
       case 'Transit':
@@ -156,7 +167,7 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
               </div>
               <div className="flex items-center justify-between text-[10px] font-semibold pt-2 border-t border-slate-100 dark:border-white/10">
                 <span className="text-slate-600 dark:text-slate-300">{day.weather.temp}</span>
-                <span className={day.weather.isRainy ? 'text-blue-500' : 'text-amber-500'}>
+                <span className={day.weather.isRainy ? 'text-blue-500' : 'text-[#38BDF8]'}>
                   {day.weather.condition}
                 </span>
               </div>
@@ -189,7 +200,7 @@ export const ItineraryCanvas: React.FC<ItineraryCanvasProps> = ({
             <div className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-2 ${
               activeDay?.weather.isRainy
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                : 'bg-sky-500/10 text-[#0284C7] dark:text-[#38BDF8] border-[#38BDF8]/20'
             }`}>
               {activeDay?.weather.isRainy ? <CloudRain className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               <span>{activeDay?.weather.isRainy ? '☔ Rain-Proof Indoor Plan' : '☀️ Clear Weather Outdoor Plan'}</span>

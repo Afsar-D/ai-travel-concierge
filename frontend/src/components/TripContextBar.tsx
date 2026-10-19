@@ -239,7 +239,7 @@ export const TripContextBar: React.FC<TripContextBarProps> = ({
         <button
           onClick={onGenerate}
           disabled={isLoading}
-          className="flex items-center justify-center space-x-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold text-xs shadow-md shadow-sky-500/20 hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
+          className="flex items-center justify-center space-x-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-white font-semibold text-xs shadow-md shadow-black/40 hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0 border border-white/10"
         >
           {isLoading ? (
             <>

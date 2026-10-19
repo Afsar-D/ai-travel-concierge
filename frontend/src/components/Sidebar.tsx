@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Compass, 
   MessageSquare, 
   Calendar, 
   Plane, 
@@ -46,15 +45,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onReturnToLanding}
           className="h-16 px-6 flex items-center space-x-3 border-b border-slate-100 dark:border-slate-800/60 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 shrink-0">
-            <Compass className="w-5 h-5 animate-pulse" />
+          <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-1.5 shrink-0">
+            <img src="/travel.svg" alt="Laugh Tale" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-serif font-bold text-base tracking-tight text-slate-900 dark:text-slate-50">
-              SOJOURN
+              LAUGH TALE
             </span>
             <span className="text-[9px] uppercase tracking-widest font-semibold text-sky-400 -mt-0.5">
-              Luxury AI Concierge
+              The Final Destination
             </span>
           </div>
         </div>

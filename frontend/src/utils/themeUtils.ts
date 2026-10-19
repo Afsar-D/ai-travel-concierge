@@ -81,19 +81,127 @@ export function capitalizeWords(str: string = ''): string {
     .join(' ');
 }
 
+export function resolveDestinationCountry(destination: string = '', country: string = ''): { city: string; country: string } {
+  const d = destination.trim();
+  const c = country.trim();
+
+  // If destination already has comma, e.g. "Kyoto, Japan" or "Bali, Indonesia"
+  if (d.includes(',')) {
+    const parts = d.split(',').map(p => p.trim());
+    return {
+      city: capitalizeWords(parts[0]),
+      country: capitalizeWords(parts.slice(1).join(', '))
+    };
+  }
+
+  const cleanDest = capitalizeWords(d);
+  let cleanCountry = capitalizeWords(c);
+
+  // If country is identical to destination or empty, infer real country
+  if (!cleanCountry || cleanCountry.toLowerCase() === cleanDest.toLowerCase()) {
+    const lower = cleanDest.toLowerCase();
+    if (lower.includes('bali')) cleanCountry = 'Indonesia';
+    else if (lower.includes('tokyo') || lower.includes('kyoto') || lower.includes('osaka')) cleanCountry = 'Japan';
+    else if (lower.includes('paris') || lower.includes('nice') || lower.includes('lyon')) cleanCountry = 'France';
+    else if (lower.includes('rome') || lower.includes('florence') || lower.includes('venice') || lower.includes('milan') || lower.includes('amalfi')) cleanCountry = 'Italy';
+    else if (lower.includes('london') || lower.includes('edinburgh') || lower.includes('manchester')) cleanCountry = 'United Kingdom';
+    else if (lower.includes('new york') || lower.includes('los angeles') || lower.includes('chicago') || lower.includes('miami') || lower.includes('san francisco')) cleanCountry = 'USA';
+    else if (lower.includes('dubai') || lower.includes('abu dhabi')) cleanCountry = 'UAE';
+    else if (lower.includes('bangkok') || lower.includes('phuket') || lower.includes('chiang mai')) cleanCountry = 'Thailand';
+    else if (lower.includes('santorini') || lower.includes('athens') || lower.includes('mykonos')) cleanCountry = 'Greece';
+    else if (lower.includes('copenhagen')) cleanCountry = 'Denmark';
+    else if (lower.includes('lisbon') || lower.includes('porto')) cleanCountry = 'Portugal';
+    else if (lower.includes('barcelona') || lower.includes('madrid') || lower.includes('seville')) cleanCountry = 'Spain';
+    else if (lower.includes('amsterdam')) cleanCountry = 'Netherlands';
+    else if (lower.includes('sydney') || lower.includes('melbourne')) cleanCountry = 'Australia';
+    else if (lower.includes('singapore')) cleanCountry = 'Singapore';
+    else if (lower.includes('zurich') || lower.includes('geneva') || lower.includes('zermatt') || lower.includes('switzerland')) cleanCountry = 'Switzerland';
+    else if (lower.includes('cairo')) cleanCountry = 'Egypt';
+    else if (lower.includes('mumbai') || lower.includes('delhi') || lower.includes('goa') || lower.includes('kerala') || lower.includes('jaipur') || lower.includes('bangalore') || lower.includes('chennai') || lower.includes('kolkata')) cleanCountry = 'India';
+    else cleanCountry = '';
+  }
+
+  return { city: cleanDest, country: cleanCountry };
+}
+
 export function formatLocationName(destination: string = '', country: string = ''): string {
-  const cleanDest = capitalizeWords(destination);
-  let cleanCountry = capitalizeWords(country);
+  const { city, country: resolvedCountry } = resolveDestinationCountry(destination, country);
+  if (!resolvedCountry || city.toLowerCase() === resolvedCountry.toLowerCase()) {
+    return city;
+  }
+  return `${city}, ${resolvedCountry}`;
+}
 
-  if (!cleanCountry || cleanDest.toLowerCase() === cleanCountry.toLowerCase()) {
-    cleanCountry = 'India';
+export interface DestinationTimeInfo {
+  timeStr: string;
+  tzAbbreviation: string;
+  ianaTimezone: string;
+}
+
+export function getDestinationTimeInfo(destination: string = '', country: string = ''): DestinationTimeInfo {
+  const target = (destination + ' ' + country).toLowerCase();
+  
+  let ianaTimezone = 'UTC';
+  let tzAbbreviation = 'UTC';
+
+  if (target.includes('bali') || target.includes('indonesia') || target.includes('makassar')) {
+    ianaTimezone = 'Asia/Makassar';
+    tzAbbreviation = 'WITA';
+  } else if (target.includes('mumbai') || target.includes('delhi') || target.includes('india') || target.includes('goa') || target.includes('kerala') || target.includes('jaipur') || target.includes('bangalore') || target.includes('chennai') || target.includes('kolkata')) {
+    ianaTimezone = 'Asia/Kolkata';
+    tzAbbreviation = 'IST';
+  } else if (target.includes('tokyo') || target.includes('kyoto') || target.includes('japan') || target.includes('osaka')) {
+    ianaTimezone = 'Asia/Tokyo';
+    tzAbbreviation = 'JST';
+  } else if (target.includes('london') || target.includes('uk') || target.includes('england') || target.includes('edinburgh')) {
+    ianaTimezone = 'Europe/London';
+    tzAbbreviation = 'GMT';
+  } else if (target.includes('paris') || target.includes('france') || target.includes('rome') || target.includes('italy') || target.includes('copenhagen') || target.includes('denmark') || target.includes('madrid') || target.includes('spain') || target.includes('amsterdam') || target.includes('berlin') || target.includes('germany') || target.includes('switzerland') || target.includes('zurich')) {
+    ianaTimezone = 'Europe/Paris';
+    tzAbbreviation = 'CET';
+  } else if (target.includes('lisbon') || target.includes('portugal')) {
+    ianaTimezone = 'Europe/Lisbon';
+    tzAbbreviation = 'WET';
+  } else if (target.includes('new york') || target.includes('nyc') || target.includes('miami')) {
+    ianaTimezone = 'America/New_York';
+    tzAbbreviation = 'EST';
+  } else if (target.includes('los angeles') || target.includes('california') || target.includes('san francisco')) {
+    ianaTimezone = 'America/Los_Angeles';
+    tzAbbreviation = 'PST';
+  } else if (target.includes('dubai') || target.includes('uae') || target.includes('abu dhabi')) {
+    ianaTimezone = 'Asia/Dubai';
+    tzAbbreviation = 'GST';
+  } else if (target.includes('singapore')) {
+    ianaTimezone = 'Asia/Singapore';
+    tzAbbreviation = 'SGT';
+  } else if (target.includes('bangkok') || target.includes('thailand') || target.includes('phuket')) {
+    ianaTimezone = 'Asia/Bangkok';
+    tzAbbreviation = 'ICT';
+  } else if (target.includes('sydney') || target.includes('melbourne') || target.includes('australia')) {
+    ianaTimezone = 'Australia/Sydney';
+    tzAbbreviation = 'AEST';
+  } else {
+    try {
+      ianaTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+      tzAbbreviation = 'LCL';
+    } catch {
+      ianaTimezone = 'Asia/Kolkata';
+      tzAbbreviation = 'IST';
+    }
   }
 
-  if (cleanDest.toLowerCase() === cleanCountry.toLowerCase()) {
-    return cleanDest;
+  try {
+    const now = new Date();
+    const timeStr = new Intl.DateTimeFormat([], {
+      timeZone: ianaTimezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(now);
+    return { timeStr, tzAbbreviation, ianaTimezone };
+  } catch {
+    return { timeStr: '12:00', tzAbbreviation, ianaTimezone };
   }
-
-  return `${cleanDest}, ${cleanCountry}`;
 }
 
 export function getDestinationBackgroundImage(dest: string = ''): string {
@@ -145,3 +253,51 @@ export function getDestinationBackgroundImage(dest: string = ''): string {
   const index = Math.abs(hash) % fallbacks.length;
   return fallbacks[index];
 }
+
+export function getCleanSummary(desc?: string, destination?: string): string {
+  const destName = destination ? capitalizeWords(destination) : 'this region';
+  if (!desc) {
+    return `Welcome to ${destName}! An intimate, bespoke expedition featuring curated architectural sanctuaries, private atelier visits, and tailored local immersion.`;
+  }
+
+  // Filter out markdown headers, bullets, and day markers
+  const lines = desc
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  // Look for a welcome or descriptive sentence that isn't a day header or bullet
+  const welcomeCandidate = lines.find(line => {
+    const stripped = line.replace(/^[#*\-•\d.]+\s*/, '').trim();
+    if (/^(day\s*\d+|itinerary|schedule|overview|timeline|flight|hotel|activity)/i.test(stripped)) return false;
+    if (stripped.length < 15) return false;
+    return true;
+  });
+
+  if (welcomeCandidate) {
+    const clean = welcomeCandidate
+      .replace(/^[#*\-•\d.]+\s*/, '')
+      .replace(/\*\*/g, '')
+      .replace(/\[.*?\]\(.*?\)/g, '')
+      .trim();
+    return clean.length > 220 ? clean.slice(0, 217) + '...' : clean;
+  }
+
+  return `Welcome to ${destName}! An intimate, bespoke expedition featuring curated architectural sanctuaries, private atelier visits, and tailored local immersion.`;
+}
+
+export function getWelcomeMessage(destination?: string, country?: string, budget?: string): string {
+  const { city } = resolveDestinationCountry(destination, country);
+  const name = city || 'your destination';
+  const tier = (budget || 'luxury').toLowerCase();
+
+  if (tier === 'luxury' || tier === 'high') {
+    return `Welcome to ${name}! An intimate, bespoke expedition featuring curated architectural sanctuaries, private atelier visits, and tailored local immersion.`;
+  } else if (tier === 'medium' || tier === 'moderate') {
+    return `Welcome to ${name}! A handpicked cultural journey blending boutique heritage stays, authentic neighborhood gastronomy, and scenic discovery.`;
+  } else {
+    return `Welcome to ${name}! A vibrant explorer’s voyage through iconic landmarks, hidden local alleys, and quintessential cultural highlights.`;
+  }
+}
+
+

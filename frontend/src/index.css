@@ -1,16 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: 'Newsreader', 'Cormorant Garamond', 'Georgia', serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-linen-50: #FDFCF9;
+  --color-linen-100: #FAF9F6;
+  --color-linen-200: #F4F1EA;
+  --color-linen-300: #EBE7DC;
+  --color-linen-400: #DDD7C9;
+
+  --color-charcoal-900: #151516;
+  --color-charcoal-800: #232326;
+  --color-charcoal-700: #38383C;
+  --color-charcoal-600: #525258;
+  --color-charcoal-500: #71717A;
+  --color-charcoal-400: #A1A1AA;
+
+  --color-olive-600: #4A5442;
+  --color-olive-700: #3D4536;
+  --color-olive-800: #2C3227;
+
+  --color-terracotta: #9A5B43;
+  --color-stone-warm: #E8E5DD;
+  --color-border-paper: #E8E4DA;
+}
+
 @layer base {
   :root {
+    --font-serif: 'Newsreader', 'Cormorant Garamond', 'Georgia', serif;
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
-
-    /* Sunset Coral & Vibrant Rose Palette */
-    --color-accent: #F43F5E;
-    --color-accent-hover: #E11D48;
-    --color-accent-light: #FFF1F2;
-    --color-bg-light: #F8FAFC;
-    --color-surface-light: #FFFFFF;
   }
 
   html {
@@ -19,17 +40,42 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: #FAF9F6;
+    color: #151516;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     scroll-behavior: smooth;
   }
+}
 
-  h1, h2, h3, h4 {
-    font-family: var(--font-sans);
-    letter-spacing: -0.025em;
-  }
+/* Paper card surfaces from demo.html */
+.paper-panel {
+  background-color: rgba(253, 252, 249, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(232, 228, 218, 0.9);
+}
+
+.paper-inset {
+  background-color: rgba(244, 241, 234, 0.7);
+  border: 1px solid rgba(232, 228, 218, 0.75);
+}
+
+.tracking-editorial-mono {
+  letter-spacing: 0.1em;
+}
+
+.ambient-bg {
+  transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1), transform 16000ms ease-out;
+}
+
+.bg-scale-subtle {
+  animation: ambientPan 38s ease-in-out infinite alternate;
+}
+
+@keyframes ambientPan {
+  0% { transform: scale(1.02) translate(0, 0); }
+  100% { transform: scale(1.06) translate(-1%, -1%); }
 }
 
 /* Minimalist Custom Scrollbar */
@@ -43,37 +89,37 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(56, 189, 248, 0.45);
 }
 
 /* Crisp Frosted Luxury Glass Surfaces */
 .glass-panel-dark {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.08), 0 0 1px 1px rgba(226, 232, 240, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .glass-card-neutral {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
 }
 
 .glass-card-neutral:hover {
-  background: #FFFFFF;
-  border-color: rgba(244, 63, 94, 0.3);
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-3px);
-  box-shadow: 0 20px 35px -10px rgba(244, 63, 94, 0.1), 0 0 0 1px rgba(244, 63, 94, 0.15);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.7);
 }
 
 /* Smooth Keyframes */
@@ -91,11 +137,22 @@
 @keyframes scaleIn {
   0% {
     opacity: 0;
-    transform: scale(0.93);
+    transform: scale(0.95);
   }
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -132,6 +189,10 @@
 
 .animate-scale-in {
   animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-float-slow {

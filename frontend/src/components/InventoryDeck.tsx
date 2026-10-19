@@ -170,8 +170,8 @@ export const InventoryDeck: React.FC<InventoryDeckProps> = ({ trip }) => {
                     <h3 className="font-serif font-bold text-base text-slate-900 dark:text-slate-100">
                       {hotel.name}
                     </h3>
-                    <div className="flex items-center space-x-1 text-amber-500 font-bold text-xs">
-                      <Star className="w-3.5 h-3.5 fill-amber-500" />
+                    <div className="flex items-center space-x-1 text-[#38BDF8] font-bold text-xs">
+                      <Star className="w-3.5 h-3.5 fill-[#38BDF8]" />
                       <span>{hotel.rating}</span>
                     </div>
                   </div>

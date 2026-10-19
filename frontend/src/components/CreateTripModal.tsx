@@ -14,7 +14,8 @@ import {
 import type { TripState, BudgetTier } from '../types';
 import { sendChatMessage } from '../services/api';
 import { parseMarkdownToItinerary } from '../utils/itineraryParser';
-import { getDestinationBackgroundImage } from '../utils/themeUtils';
+import { parseBackendReply } from '../utils/parser';
+import { getDestinationBackgroundImage, resolveDestinationCountry } from '../utils/themeUtils';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -47,8 +48,6 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
   const nightsCount = calculateNights();
 
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -68,13 +67,15 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
     setIsLoading(true);
 
+    const { city: cleanDestination, country: resolvedCountry } = resolveDestinationCountry(destination);
+
     const initialTrip: TripState = {
       id: `trip_${Date.now()}`,
       origin,
-      destination,
-      country: destination,
-      description: `${destination} is blessed with pristine landscapes, luxury retreats, fine dining, and curated local immersion.`,
-      bgImage: getDestinationBackgroundImage(destination),
+      destination: cleanDestination || destination,
+      country: resolvedCountry || '',
+      description: `${cleanDestination || destination} is blessed with pristine landscapes, luxury retreats, fine dining, and curated local immersion.`,
+      bgImage: getDestinationBackgroundImage(cleanDestination || destination),
       start_date: startDate,
       end_date: endDate,
       budget,
@@ -98,29 +99,29 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
       const parsedDays = parseMarkdownToItinerary(response.reply, destination, startDate);
       if (parsedDays.length === 0) {
         setIsLoading(false);
-        setError(`Unable to generate plan for "${destination}". Please ensure the destination city name is correct.`);
+        setError('Could not parse day-by-day activities. Please try a major destination.');
         return;
       }
 
-      const newTrip: TripState = {
+      const parsedData = parseBackendReply(response.reply, origin, destination);
+      const createdTrip: TripState = {
         ...initialTrip,
-        id: response.session_id || initialTrip.id,
-        session_id: response.session_id || initialTrip.session_id,
-        description: response.reply || initialTrip.description,
-        bgImage: initialTrip.bgImage || getDestinationBackgroundImage(destination)
+        description: response.reply,
+        flights: parsedData.flights.length > 0 ? parsedData.flights : undefined,
+        hotels: parsedData.hotels.length > 0 ? parsedData.hotels : undefined
       };
 
       setIsLoading(false);
-      onCreateTrip(newTrip);
+      onCreateTrip(createdTrip);
       onClose();
     } catch (err: any) {
-      // Resilient Fallback: If backend returns 500 or times out, fallback to creating initialTrip cleanly so user is never blocked
-      const fallbackReply = `## Day 1\n* **[Arrival & ${destination} Exploration]**: Arrive in ${destination}, check into your accommodation, and explore local highlights, culture, and dining.`;
+      console.warn('Backend generation failed, building offline itinerary fallback:', err);
+      
       const fallbackTrip: TripState = {
         ...initialTrip,
-        description: fallbackReply,
-        bgImage: initialTrip.bgImage || getDestinationBackgroundImage(destination)
+        description: `Bespoke curated journey through ${destination}. Enjoy private architectural sanctuaries, chef tasting counters, and secluded historical landmarks.`
       };
+
       setIsLoading(false);
       onCreateTrip(fallbackTrip);
       onClose();
@@ -128,68 +129,68 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-[#151516]/65 backdrop-blur-sm animate-fade-in">
       
-      {/* Sleek Minimalist Modal Surface */}
-      <div className="relative w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-7 sm:p-9 shadow-2xl space-y-6 text-slate-900 overflow-hidden">
+      {/* Commission Archive Modal Surface from demo.html */}
+      <div className="paper-panel relative w-full max-w-lg bg-[#FAF9F6] border border-[#E8E4DA] rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 sm:p-8 shadow-2xl space-y-4 sm:space-y-6 text-[#151516] max-h-[92vh] overflow-y-auto">
         
         {/* Header Ribbon */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-500 block">
-              ODYSSEY AI
+        <div className="flex items-baseline justify-between border-b border-[#E8E4DA] pb-3">
+          <div>
+            <span className="text-[10px] font-mono tracking-editorial-mono uppercase text-[#71717A] font-semibold block">
+              Commission Archive
             </span>
-            <h3 className="font-bold text-xl text-slate-900 tracking-tight">
-              Create New Journey
+            <h3 className="font-serif text-2xl font-normal text-[#151516] mt-0.5">
+              Plan a New Expedition
             </h3>
           </div>
 
           <button 
             onClick={onClose} 
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-95 cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[#E8E5DD] text-[#71717A] hover:text-[#151516] transition cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-3 animate-shake">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center space-x-3">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Minimal Form */}
-        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
           {/* Origin & Destination */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Departure</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus-within:border-rose-400 focus-within:bg-white transition-colors">
-                <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">Departure</label>
+              <div className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl bg-[#F4F1EA]/80 border border-[#E8E4DA] focus-within:border-[#38383C] transition-colors">
+                <MapPin className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                 <input
                   type="text"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                   required
-                  className="w-full bg-transparent font-medium focus:outline-none text-slate-900 placeholder-slate-400"
+                  className="w-full bg-transparent font-medium focus:outline-none text-[#151516] placeholder-[#A1A1AA]"
                   placeholder="e.g. London"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Destination</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus-within:border-rose-400 focus-within:bg-white transition-colors">
-                <Globe className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">Destination Focus</label>
+              <div className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl bg-[#F4F1EA]/80 border border-[#E8E4DA] focus-within:border-[#38383C] transition-colors">
+                <Globe className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                 <input
                   type="text"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   required
-                  className="w-full bg-transparent font-medium focus:outline-none text-slate-900 placeholder-slate-400"
+                  className="w-full bg-transparent font-medium focus:outline-none text-[#151516] placeholder-[#A1A1AA]"
                   placeholder="e.g. Bali / Tokyo"
                 />
               </div>
@@ -198,10 +199,10 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
           {/* Start & End Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Start Date</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus-within:border-rose-400 focus-within:bg-white transition-colors">
-                <Calendar className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">Start Date</label>
+              <div className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl bg-[#F4F1EA]/80 border border-[#E8E4DA] focus-within:border-[#38383C] transition-colors">
+                <Calendar className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                 <input
                   type="date"
                   value={startDate}
@@ -210,15 +211,15 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                     if (error) setError(null);
                   }}
                   required
-                  className="w-full bg-transparent font-medium focus:outline-none text-slate-900 cursor-pointer"
+                  className="w-full bg-transparent font-medium focus:outline-none text-[#151516] cursor-pointer"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">End Date</label>
-              <div className="flex items-center space-x-3 px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus-within:border-rose-400 focus-within:bg-white transition-colors">
-                <Calendar className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">End Date</label>
+              <div className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl bg-[#F4F1EA]/80 border border-[#E8E4DA] focus-within:border-[#38383C] transition-colors">
+                <Calendar className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                 <input
                   type="date"
                   value={endDate}
@@ -227,7 +228,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                     if (error) setError(null);
                   }}
                   required
-                  className="w-full bg-transparent font-medium focus:outline-none text-slate-900 cursor-pointer"
+                  className="w-full bg-transparent font-medium focus:outline-none text-[#151516] cursor-pointer"
                 />
               </div>
             </div>
@@ -235,9 +236,9 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
           {/* Nights Duration Line */}
           {nightsCount > 0 && (
-            <div className="text-[11px] text-slate-600 font-medium px-3 flex items-center justify-between py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="text-[11px] text-[#525258] font-mono px-3.5 py-1.5 bg-[#F4F1EA] rounded-xl border border-[#E8E4DA] flex items-center justify-between">
               <span>Estimated Duration</span>
-              <span className="text-rose-600 font-bold">{nightsCount} Nights Stay</span>
+              <span className="font-semibold text-[#151516]">{nightsCount} Nights Stay</span>
             </div>
           )}
 
@@ -245,24 +246,24 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             
             {/* Travelers Count */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Travelers</label>
-              <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">Travelers</label>
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#F4F1EA]/80 border border-[#E8E4DA]">
                 <button
                   type="button"
                   onClick={() => {
                     setGuestCount(prev => Math.max(1, prev - 1));
                     if (error) setError(null);
                   }}
-                  className="w-8 h-8 rounded-xl bg-slate-200/70 hover:bg-slate-300 flex items-center justify-center text-slate-700 active:scale-95 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white hover:bg-[#E8E5DD] flex items-center justify-center text-[#151516] transition cursor-pointer border border-[#E8E4DA]"
                 >
-                  <Minus className="w-3.5 h-3.5 text-slate-700" />
+                  <Minus className="w-3 h-3 text-[#151516]" />
                 </button>
 
                 <div className="flex items-center space-x-2 px-2">
-                  <Users className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="font-bold text-sm text-slate-900">{guestCount}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Guests</span>
+                  <Users className="w-3.5 h-3.5 text-[#71717A]" />
+                  <span className="font-semibold text-sm text-[#151516]">{guestCount}</span>
+                  <span className="text-[10px] text-[#71717A]">Guests</span>
                 </div>
 
                 <button
@@ -271,24 +272,24 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                     setGuestCount(prev => Math.min(99, prev + 1));
                     if (error) setError(null);
                   }}
-                  className="w-8 h-8 rounded-xl bg-slate-200/70 hover:bg-slate-300 flex items-center justify-center text-slate-700 active:scale-95 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white hover:bg-[#E8E5DD] flex items-center justify-center text-[#151516] transition cursor-pointer border border-[#E8E4DA]"
                 >
-                  <Plus className="w-3.5 h-3.5 text-slate-700" />
+                  <Plus className="w-3 h-3 text-[#151516]" />
                 </button>
               </div>
             </div>
 
-            {/* Experience Tier Pill Selector */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Experience Tier</label>
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200">
+            {/* Experience Tier Selector */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">Expedition Budget</label>
+              <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[#F4F1EA] border border-[#E8E4DA]">
                 <button
                   type="button"
                   onClick={() => setBudget('low')}
-                  className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
+                  className={`py-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
                     budget === 'low'
-                      ? 'bg-rose-500 text-white shadow-sm font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-[#151516] shadow-sm font-semibold border border-[#E8E4DA]'
+                      : 'text-[#71717A] hover:text-[#151516]'
                   }`}
                 >
                   Essential
@@ -297,10 +298,10 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setBudget('medium')}
-                  className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
+                  className={`py-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
                     budget === 'medium'
-                      ? 'bg-rose-500 text-white shadow-sm font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-[#151516] shadow-sm font-semibold border border-[#E8E4DA]'
+                      : 'text-[#71717A] hover:text-[#151516]'
                   }`}
                 >
                   Signature
@@ -309,10 +310,10 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setBudget('high')}
-                  className={`py-2.5 rounded-xl text-[10px] font-semibold transition-all cursor-pointer ${
+                  className={`py-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
                     budget === 'high'
-                      ? 'bg-rose-500 text-white shadow-sm font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-[#151516] shadow-sm font-semibold border border-[#E8E4DA]'
+                      : 'text-[#71717A] hover:text-[#151516]'
                   }`}
                 >
                   Luxury
@@ -322,24 +323,33 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
 
           </div>
 
-          {/* Submit Action */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 mt-6 cursor-pointer"
-          >
-            {isLoading ? (
-              <span className="flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 animate-spin text-white" />
-                <span>Creating Journey...</span>
-              </span>
-            ) : (
-              <>
-                <span>Create & Explore Journey</span>
-                <ArrowRight className="w-4 h-4 text-white" />
-              </>
-            )}
-          </button>
+          {/* Modal Actions */}
+          <div className="pt-3 flex justify-end gap-3 border-t border-[#E8E4DA]">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-4 py-2 text-[#71717A] hover:text-[#151516] transition cursor-pointer"
+            >
+              Dismiss
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl bg-[#151516] hover:bg-[#232326] text-white font-medium transition flex items-center space-x-2 cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              {isLoading ? (
+                <span className="flex items-center space-x-2">
+                  <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                  <span>Curating Dossier...</span>
+                </span>
+              ) : (
+                <>
+                  <span>Commission Archive</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          </div>
 
         </form>
 

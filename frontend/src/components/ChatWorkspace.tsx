@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Compass, Sparkles, Bot, User } from 'lucide-react';
+import { Send, Sparkles, Bot, User } from 'lucide-react';
 import type { ChatMessage, TripState } from '../types';
 
 interface ChatWorkspaceProps {
@@ -49,7 +49,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="font-semibold text-slate-700 dark:text-slate-300">
-            SOJOURN AI Concierge Engine
+            LAUGH TALE AI Concierge Engine
           </span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono">
             FastAPI + LangGraph + Gemini 3.5
@@ -66,11 +66,11 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-xl shadow-sky-500/20 mb-4">
-              <Compass className="w-8 h-8 animate-spin" style={{ animationDuration: '12s' }} />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex items-center justify-center text-white shadow-xl shadow-black/50 mb-4">
+              <img src="/travel.svg" alt="Laugh Tale" className="w-9 h-9 object-contain" />
             </div>
             <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Welcome to SOJOURN
+              Welcome to LAUGH TALE
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
               Your bespoke multi-agent travel concierge. Specify your origin, destination, and budget parameters above, then click <strong>Generate Itinerary</strong> or ask any custom travel question below.
@@ -123,7 +123,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
               >
                 <div className="flex items-center justify-between mb-1.5 opacity-70">
                   <span className="font-semibold text-[10px] uppercase tracking-wider">
-                    {msg.sender === 'user' ? 'You' : 'SOJOURN Concierge'}
+                    {msg.sender === 'user' ? 'You' : 'LAUGH TALE Navigator'}
                   </span>
                   <span className="text-[10px]">{msg.timestamp}</span>
                 </div>
@@ -199,7 +199,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                 handleSubmit(e);
               }
             }}
-            placeholder={`Ask SOJOURN about ${trip.destination}, dining, transport, or weather...`}
+            placeholder={`Ask LAUGH TALE about ${trip.destination}, dining, transport, or weather...`}
             className="w-full pl-4 pr-12 py-3 rounded-2xl bg-slate-50 dark:bg-[#1E2638] border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 dark:focus:border-sky-400 transition-all resize-none"
           />
           <button

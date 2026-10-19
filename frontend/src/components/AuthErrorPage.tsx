@@ -72,17 +72,17 @@ export const AuthErrorPage: React.FC<AuthErrorPageProps> = ({
       onLoginAgain();
     } else {
       try {
-        localStorage.removeItem('odyssey_token');
-        localStorage.removeItem('odyssey_user');
+        localStorage.removeItem('laughtale_token');
+        localStorage.removeItem('laughtale_user');
       } catch {}
       window.location.href = '/';
     }
   };
 
   return (
-    <div className="min-h-screen w-screen bg-[#F8FAFC] text-slate-800 font-sans flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden selection:bg-rose-500/20 selection:text-rose-900">
+    <div className="min-h-screen w-screen bg-[#080B11] text-slate-100 font-sans flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden selection:bg-sky-500/20">
       {/* Subtle ambient glow */}
-      <div className="absolute w-[450px] h-[350px] bg-rose-500/5 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute w-[450px] h-[350px] bg-sky-500/5 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md mx-auto">
         {/* Lottie Animation */}
@@ -93,14 +93,14 @@ export const AuthErrorPage: React.FC<AuthErrorPageProps> = ({
             aria-label="Error Animation"
           />
           {hasError && (
-            <div className="text-6xl font-black text-rose-400/40 font-mono">
+            <div className="text-6xl font-black text-sky-400/40 font-mono">
               401
             </div>
           )}
         </div>
 
         {/* Clean Message */}
-        <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed mb-6">
+        <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed mb-6">
           {message || 'Something error occurred. Please login again.'}
         </p>
 
@@ -108,9 +108,9 @@ export const AuthErrorPage: React.FC<AuthErrorPageProps> = ({
         <button
           type="button"
           onClick={handleHomeClick}
-          className="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-500/25 active:scale-95 transition-all flex items-center space-x-2 cursor-pointer"
+          className="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-black/50 border border-white/20 active:scale-95 transition-all flex items-center space-x-2 cursor-pointer"
         >
-          <Home className="w-4 h-4" />
+          <Home className="w-4 h-4 text-slate-950" />
           <span>Home</span>
         </button>
       </div>

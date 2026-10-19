@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Compass, 
   Sparkles, 
   MapPin, 
   Calendar as CalendarIcon, 
@@ -107,9 +106,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#080B11] text-slate-900 dark:text-slate-100 flex flex-col font-sans relative overflow-hidden">
       
       {/* Ambient Floating Glow Orbs */}
-      <div className="absolute w-[600px] h-[300px] rounded-full bg-sky-500/10 blur-[120px] pointer-events-none top-[-100px] left-1/2 -translate-x-1/2" />
-      <div className="absolute w-[500px] h-[300px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none top-[600px] right-[-200px]" />
-
       {/* 1. Floating Capsule Navigation Header */}
       <div className="fixed top-6 inset-x-0 z-50 flex justify-center px-4">
         <header className="glass-nav rounded-full px-6 py-3 border border-slate-200/80 dark:border-white/10 shadow-2xl flex items-center justify-between gap-8 max-w-4xl w-full">
@@ -119,15 +115,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onClick={onLaunchConcierge}
             className="flex items-center space-x-3 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:rotate-45 transition-transform duration-500">
-              <Compass className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform duration-300">
+              <img src="/travel.svg" alt="Laugh Tale" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="font-serif font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100">
-                SOJOURN
+                LAUGH TALE
               </span>
-              <span className="text-[8px] uppercase tracking-widest font-semibold text-sky-400 -mt-1">
-                Luxury AI Concierge
+              <span className="text-[8px] uppercase tracking-widest font-semibold text-slate-400 -mt-1">
+                The Final Destination
               </span>
             </div>
           </div>
@@ -142,7 +138,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Action CTA */}
           <div className="flex items-center space-x-3">
             <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/10">
-              <span className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
               <span>FastAPI {backendConnected ? 'Ready' : 'Standby'}</span>
             </div>
 
@@ -190,7 +186,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </h1>
 
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-600 dark:text-slate-400 font-normal leading-relaxed">
-            SOJOURN orchestrates your custom travel itinerary using live weather forecasts, curated dining, and luxury stays—all styled with organic luxury.
+            LAUGH TALE orchestrates your custom travel itinerary using live weather forecasts, curated dining, and luxury stays—all styled with organic luxury.
           </p>
 
           {/* Floating Glass Trip Planner Card */}
@@ -293,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Action Button */}
             <button
               onClick={onLaunchConcierge}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-500 text-slate-950 font-serif font-bold text-base shadow-xl shadow-sky-500/25 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center space-x-3"
+              className="w-full py-4 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-serif font-bold text-base shadow-xl shadow-black/50 border border-white/20 active:scale-[0.99] transition-all flex items-center justify-center space-x-3"
             >
               <span>Craft Personalized Itinerary</span>
               <ArrowRight className="w-4 h-4" />
@@ -343,7 +339,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       {dest.tag}
                     </span>
                     <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-900 dark:text-slate-100 font-bold text-xs shadow-md">
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <Star className="w-3.5 h-3.5 text-[#38BDF8] fill-[#38BDF8]" />
                       <span>{dest.rating}</span>
                     </div>
                   </div>
@@ -416,7 +412,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {activeFeatureTab === 'weather' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                   <div className="space-y-4 text-left">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-[#38BDF8] flex items-center justify-center">
                       <Sun className="w-5 h-5" />
                     </div>
                     <h3 className="font-serif font-bold text-xl text-slate-900 dark:text-slate-100">
@@ -510,10 +506,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">
-              S
+              L
             </div>
-            <span className="font-serif font-bold text-base text-white">SOJOURN</span>
-            <span>— AI Luxury Travel Concierge</span>
+            <span className="font-serif font-bold text-base text-white">LAUGH TALE</span>
+            <span>— The Final Destination</span>
           </div>
 
           <div className="flex items-center space-x-6">

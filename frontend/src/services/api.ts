@@ -1,5 +1,5 @@
 import type { TripState, UserProfile } from '../types';
-import { getDestinationBackgroundImage } from '../utils/themeUtils';
+import { getDestinationBackgroundImage, resolveDestinationCountry } from '../utils/themeUtils';
 
 export interface AuthResponse {
   access_token: string;
@@ -27,8 +27,8 @@ export async function loginUser(email: string, password: string): Promise<UserPr
   }
 
   const data: AuthResponse = await response.json();
-  localStorage.setItem('odyssey_token', data.access_token);
-  localStorage.setItem('odyssey_user', JSON.stringify(data.user));
+  localStorage.setItem('laughtale_token', data.access_token);
+  localStorage.setItem('laughtale_user', JSON.stringify(data.user));
   return { name: data.user.name, email: data.user.email };
 }
 
@@ -48,8 +48,8 @@ export async function registerUser(name: string, email: string, password: string
   }
 
   const data: AuthResponse = await response.json();
-  localStorage.setItem('odyssey_token', data.access_token);
-  localStorage.setItem('odyssey_user', JSON.stringify(data.user));
+  localStorage.setItem('laughtale_token', data.access_token);
+  localStorage.setItem('laughtale_user', JSON.stringify(data.user));
   return { name: data.user.name, email: data.user.email };
 }
 
@@ -111,7 +111,7 @@ export async function sendChatMessage(
     currency: 'INR',
   };
 
-  const token = localStorage.getItem('odyssey_token');
+  const token = localStorage.getItem('laughtale_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -171,7 +171,7 @@ export async function sendChatMessage(
 
 export async function fetchSessionInventory(sessionId: string): Promise<{ flights: any[]; hotels: any[] }> {
   try {
-    const token = localStorage.getItem('odyssey_token');
+    const token = localStorage.getItem('laughtale_token');
     const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -190,9 +190,9 @@ export async function fetchSessionInventory(sessionId: string): Promise<{ flight
 
 export function notifyAuthError(message?: string) {
   try {
-    localStorage.removeItem('odyssey_token');
-    localStorage.removeItem('odyssey_user');
-    window.dispatchEvent(new CustomEvent('odyssey_auth_error', {
+    localStorage.removeItem('laughtale_token');
+    localStorage.removeItem('laughtale_user');
+    window.dispatchEvent(new CustomEvent('laughtale_auth_error', {
       detail: {
         statusCode: 401,
         message: message || 'Your security session has expired. Please sign in again.'
@@ -203,7 +203,7 @@ export function notifyAuthError(message?: string) {
 
 export async function fetchUserSessions(): Promise<TripState[]> {
   try {
-    const token = localStorage.getItem('odyssey_token');
+    const token = localStorage.getItem('laughtale_token');
     if (!token) return [];
 
     const headers: Record<string, string> = {
@@ -217,21 +217,25 @@ export async function fetchUserSessions(): Promise<TripState[]> {
       return [];
     }
     const sessions = await res.json();
-    return sessions.map((s: any) => ({
-      id: s.id,
-      origin: s.origin || 'Mumbai',
-      destination: s.destination || 'Goa',
-      country: s.destination || 'India',
-      description: s.description || `${s.destination} itinerary`,
-      bgImage: getDestinationBackgroundImage(s.destination),
-      start_date: s.start_date || '2026-10-15',
-      end_date: s.end_date || '2026-10-18',
-      budget: s.budget || 'medium',
-      guest_count: s.guest_count || 2,
-      session_id: s.id,
-      status: 'active',
-      isBookmarked: true
-    }));
+    return sessions.map((s: any) => {
+      const dest = s.destination || 'Goa';
+      const { city, country } = resolveDestinationCountry(dest);
+      return {
+        id: s.id,
+        origin: s.origin || 'Mumbai',
+        destination: city || dest,
+        country: country || (s.country && s.country.toLowerCase() !== dest.toLowerCase() ? s.country : ''),
+        description: s.description || `${city || dest} itinerary`,
+        bgImage: getDestinationBackgroundImage(city || dest),
+        start_date: s.start_date || '2026-10-15',
+        end_date: s.end_date || '2026-10-18',
+        budget: s.budget || 'medium',
+        guest_count: s.guest_count || 2,
+        session_id: s.id,
+        status: 'active',
+        isBookmarked: true
+      };
+    });
   } catch (err) {
     return [];
   }
@@ -239,7 +243,7 @@ export async function fetchUserSessions(): Promise<TripState[]> {
 
 export async function deleteUserSession(sessionId: string): Promise<boolean> {
   try {
-    const token = localStorage.getItem('odyssey_token');
+    const token = localStorage.getItem('laughtale_token');
     const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;

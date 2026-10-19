@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, ArrowRight, Lock, Mail, User, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { loginUser, registerUser } from '../services/api';
 
@@ -13,6 +13,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('/man.svg');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +44,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         }
         const displayName = name.trim() || email.split('@')[0];
         const loggedInUser = await registerUser(displayName, email.trim(), password);
+        try {
+          localStorage.setItem(`laughtale_avatar_${loggedInUser.email}`, selectedAvatar);
+        } catch {}
+        loggedInUser.avatar = selectedAvatar;
         setSuccessMsg('Account created successfully!');
         setTimeout(() => {
           onLogin(loggedInUser);
         }, 400);
       } else {
         const loggedInUser = await loginUser(email.trim(), password);
+        try {
+          const savedAvatar = localStorage.getItem(`laughtale_avatar_${loggedInUser.email}`);
+          if (savedAvatar) {
+            loggedInUser.avatar = savedAvatar;
+          }
+        } catch {}
         onLogin(loggedInUser);
       }
     } catch (err: any) {
@@ -59,45 +70,45 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-screen flex items-center justify-center p-6 bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden selection:bg-rose-500/20">
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[#080B11] text-slate-100 font-sans overflow-hidden selection:bg-sky-500/20">
       
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=2000&q=90"
           alt="Luxury Travel Background"
-          className="w-full h-full object-cover opacity-15 filter brightness-105"
+          className="w-full h-full object-cover opacity-20 filter brightness-90"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/85 to-[#F8FAFC]/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#080B11] via-[#080B11]/85 to-[#080B11]/50" />
       </div>
 
       {/* Login Glass Card */}
-      <div className="relative z-10 w-full max-w-md bg-white/95 rounded-3xl p-8 border border-slate-200/90 shadow-2xl space-y-6 backdrop-blur-2xl text-slate-900">
+      <div className="relative z-10 w-full max-w-md mx-auto bg-slate-900/85 rounded-2xl sm:rounded-3xl p-4 sm:p-6 sm:p-8 border border-white/10 shadow-2xl space-y-4 sm:space-y-6 backdrop-blur-2xl text-slate-100">
         
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 backdrop-blur-md mx-auto flex items-center justify-center text-rose-500 shadow-sm">
-            <Globe className="w-7 h-7 animate-pulse text-rose-500" />
+          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md mx-auto flex items-center justify-center p-2.5 shadow-sm">
+            <img src="/travel.svg" alt="Laugh Tale" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-extrabold text-3xl tracking-tight text-slate-900 uppercase drop-shadow-sm">
-              ODYSSEY <span className="text-rose-500">AI</span>
+            <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight text-white uppercase drop-shadow-sm">
+              LAUGH TALE
             </h1>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mt-0.5">
-              Exclusive Horizon & Journey Planner
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mt-0.5">
+              The Final Destination Awaits
             </p>
           </div>
         </div>
 
         {/* Tab Switcher (Sign In vs Sign Up) */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200/80 text-xs font-semibold">
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-950/70 border border-white/10 text-xs font-semibold">
           <button
             type="button"
             onClick={() => { setAuthMode('signin'); setError(null); setSuccessMsg(null); }}
             className={`py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
               authMode === 'signin'
-                ? 'bg-white text-slate-900 font-bold shadow-sm border border-slate-200/60'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-slate-800 text-[#38BDF8] font-bold shadow-sm border border-white/10'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Sign In
@@ -107,8 +118,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             onClick={() => { setAuthMode('signup'); setError(null); setSuccessMsg(null); }}
             className={`py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
               authMode === 'signup'
-                ? 'bg-white text-slate-900 font-bold shadow-sm border border-slate-200/60'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-slate-800 text-[#38BDF8] font-bold shadow-sm border border-white/10'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Create Account
@@ -117,16 +128,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-2.5 animate-shake">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center space-x-2.5 animate-shake">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center space-x-2.5">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center space-x-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -135,46 +146,82 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {authMode === 'signup' && (
-            <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Full Name</label>
-              <div className="relative flex items-center">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
-                  placeholder="e.g. Anney Vance"
-                />
+            <>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Full Name</label>
+                <div className="relative flex items-center">
+                  <User className="w-4 h-4 text-slate-500 absolute left-3.5" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-2xl bg-slate-800/60 border border-white/10 text-sm sm:text-xs text-white placeholder:text-slate-500 focus:outline-none focus:bg-slate-800 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] transition-all duration-300"
+                    placeholder="e.g. Anney Vance"
+                  />
+                </div>
               </div>
-            </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Choose Profile Icon</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAvatar('/man.svg')}
+                    className={`flex items-center gap-2.5 p-2 rounded-2xl border transition-all cursor-pointer ${
+                      selectedAvatar === '/man.svg'
+                        ? 'bg-sky-500/15 border-sky-400 ring-1 ring-sky-400 shadow-sm'
+                        : 'bg-slate-800/40 border-white/10 hover:bg-slate-800/70'
+                    }`}
+                  >
+                    <img src="/man.svg" alt="Gentleman" className="w-7 h-7 rounded-full object-cover p-0.5 bg-white/10" />
+                    <span className={`text-xs ${selectedAvatar === '/man.svg' ? 'text-sky-300 font-semibold' : 'text-slate-300 font-medium'}`}>
+                      Gentleman
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAvatar('/woman.svg')}
+                    className={`flex items-center gap-2.5 p-2 rounded-2xl border transition-all cursor-pointer ${
+                      selectedAvatar === '/woman.svg'
+                        ? 'bg-sky-500/15 border-sky-400 ring-1 ring-sky-400 shadow-sm'
+                        : 'bg-slate-800/40 border-white/10 hover:bg-slate-800/70'
+                    }`}
+                  >
+                    <img src="/woman.svg" alt="Lady" className="w-7 h-7 rounded-full object-cover p-0.5 bg-white/10" />
+                    <span className={`text-xs ${selectedAvatar === '/woman.svg' ? 'text-sky-300 font-semibold' : 'text-slate-300 font-medium'}`}>
+                      Lady
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Email Address</label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Email Address</label>
             <div className="relative flex items-center">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5" />
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
-                placeholder="anney@odyssey.luxury"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-2xl bg-slate-800/60 border border-white/10 text-sm sm:text-xs text-white placeholder:text-slate-500 focus:outline-none focus:bg-slate-800 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] transition-all duration-300"
+                placeholder="explorer@laughtale.voyage"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Password</label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Password</label>
             <div className="relative flex items-center">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-2xl bg-slate-800/60 border border-white/10 text-sm sm:text-xs text-white placeholder:text-slate-500 focus:outline-none focus:bg-slate-800 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] transition-all duration-300"
                 placeholder="••••••••••••"
               />
             </div>
@@ -182,15 +229,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           {authMode === 'signup' && (
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Confirm Password</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Confirm Password</label>
               <div className="relative flex items-center">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5" />
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => { setConfirmPassword(e.target.value); if (error) setError(null); }}
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 transition-all duration-300"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-2xl bg-slate-800/60 border border-white/10 text-sm sm:text-xs text-white placeholder:text-slate-500 focus:outline-none focus:bg-slate-800 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] transition-all duration-300"
                   placeholder="••••••••••••"
                 />
               </div>
@@ -200,17 +247,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white font-bold text-sm shadow-xl shadow-rose-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex items-center justify-center space-x-2 mt-4 cursor-pointer"
+            className="w-full py-3.5 sm:py-4 rounded-2xl bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-sm shadow-xl shadow-black/60 border border-white/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center space-x-2 mt-4 cursor-pointer"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
+                <Loader2 className="w-4 h-4 text-slate-950 animate-spin" />
                 <span>Authenticating...</span>
               </>
             ) : (
               <>
                 <span>{authMode === 'signin' ? 'Sign In to Experience' : 'Create & Access Account'}</span>
-                <ArrowRight className="w-4 h-4 text-white" />
+                <ArrowRight className="w-4 h-4 text-slate-950" />
               </>
             )}
           </button>

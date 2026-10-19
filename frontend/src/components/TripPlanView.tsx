@@ -1,462 +1,617 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
-  Sun, 
+  Sparkles, 
+  CloudSun, 
   CloudRain, 
-  MapPin, 
-  DollarSign, 
-  ExternalLink, 
-  ShieldCheck, 
-  Download,
-  Plane,
-  Star,
-  MessageSquare,
-  Building2,
-  Wifi,
-  Trash2,
-  Sparkles
+  Sun, 
+  Wind, 
+  Share2, 
+  Trash2, 
+  Plus, 
+  Check, 
+  Plane, 
+  Feather, 
+  MessageSquare, 
+  X
 } from 'lucide-react';
-import type { TripState, ItineraryDay, Activity } from '../types';
-import { getTripTheme, getDestinationBackgroundImage, capitalizeWords } from '../utils/themeUtils';
+import type { TripState, ItineraryDay, Activity, FlightOption, HotelOption } from '../types';
+import { getDestinationBackgroundImage, capitalizeWords, formatLocationName, getDestinationTimeInfo, getCleanSummary } from '../utils/themeUtils';
 import { parseBackendReply } from '../utils/parser';
+
+export type ActivityItem = Activity;
 
 interface TripPlanViewProps {
   trip: TripState;
+  trips?: TripState[];
+  onSelectTrip?: (trip: TripState) => void;
   days: ItineraryDay[];
+  selectedDayIndex?: number;
+  onSelectDayIndex?: (index: number) => void;
+  lastUpdatedDayNumber?: number | null;
+  activeTab?: 'itinerary' | 'inventory';
+  onTabChange?: (tab: 'itinerary' | 'inventory') => void;
   onBack: () => void;
   onOpenConciergeChat: () => void;
   onOpenExport: () => void;
   onDeleteTrip: (tripId: string) => void;
-  selectedDayIndex?: number;
-  onSelectDayIndex?: (idx: number) => void;
-  lastUpdatedDayNumber?: number | null;
-  activeTab?: 'itinerary' | 'inventory';
-  onTabChange?: (tab: 'itinerary' | 'inventory') => void;
+  onUpdateItinerary?: (updatedTrip: TripState, updatedDays: ItineraryDay[]) => void;
 }
 
 export const TripPlanView: React.FC<TripPlanViewProps> = ({
   trip,
+  trips = [],
+  onSelectTrip,
   days,
+  selectedDayIndex: controlledDayIndex,
+  onSelectDayIndex,
+  activeTab: controlledActiveTab,
+  onTabChange,
   onBack,
   onOpenConciergeChat,
   onOpenExport,
   onDeleteTrip,
-  selectedDayIndex,
-  onSelectDayIndex,
-  lastUpdatedDayNumber,
-  activeTab: controlledActiveTab,
-  onTabChange
+  onUpdateItinerary,
 }) => {
   const [internalDayIndex, setInternalDayIndex] = useState(0);
-  const currentDayIndex = typeof selectedDayIndex === 'number' ? selectedDayIndex : internalDayIndex;
+  const currentDayIndex = controlledDayIndex !== undefined ? controlledDayIndex : internalDayIndex;
   const setDayIndex = onSelectDayIndex || setInternalDayIndex;
-  const [internalTab, setInternalTab] = useState<'itinerary' | 'inventory'>('itinerary');
-  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalTab;
-  const setActiveTab = onTabChange || setInternalTab;
+
+  const [currentTab, setCurrentTab] = useState<'itinerary' | 'inventory' | 'packing'>('itinerary');
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [completedStops, setCompletedStops] = useState<Record<string, boolean>>({});
+  const [bespokeStopText, setBespokeStopText] = useState('');
+
+  // Dynamic real-world local time for the destination
+  const [timeInfo, setTimeInfo] = useState(() => getDestinationTimeInfo(trip.destination, trip.country));
+
+  useEffect(() => {
+    const updateTime = () => {
+      setTimeInfo(getDestinationTimeInfo(trip.destination, trip.country));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 10000);
+    return () => clearInterval(timer);
+  }, [trip.destination, trip.country]);
+
+  // Sync controlled activeTab if passed from parent
+  useEffect(() => {
+    if (controlledActiveTab) {
+      setCurrentTab(controlledActiveTab);
+    }
+  }, [controlledActiveTab]);
+
+  const handleTabSwitch = (tab: 'itinerary' | 'inventory' | 'packing') => {
+    setCurrentTab(tab);
+    if (tab === 'itinerary' || tab === 'inventory') {
+      if (onTabChange) onTabChange(tab);
+    }
+  };
 
   const activeDay = days[currentDayIndex] || days[0];
 
-  // Dynamic Theme Palette for this specific trip
-  const tripTheme = getTripTheme(trip.destination, trip.country);
-
-  // Parse Live Backend Flight & Hotel Data or use direct trip properties
+  // Flights & Hotels extraction
   const parsedData = parseBackendReply(trip.description || '', trip.origin, trip.destination);
-  const displayFlights = (trip.flights && trip.flights.length > 0) ? trip.flights : parsedData.flights;
-  const displayHotels = (trip.hotels && trip.hotels.length > 0) ? trip.hotels : parsedData.hotels;
+  const displayFlights: FlightOption[] = (trip.flights && trip.flights.length > 0) ? trip.flights : parsedData.flights;
+  const displayHotels: HotelOption[] = (trip.hotels && trip.hotels.length > 0) ? trip.hotels : parsedData.hotels;
 
+  // Toggle completion of a timeline activity
+  const toggleStopStatus = (actId: string) => {
+    setCompletedStops(prev => ({ ...prev, [actId]: !prev[actId] }));
+  };
+
+  // Add bespoke stop to current day
+  const handleAddBespokeStop = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bespokeStopText.trim() || !activeDay) return;
+
+    const newActivity: Activity = {
+      id: `bespoke_${Date.now()}`,
+      time: '04:30 PM',
+      title: bespokeStopText.trim(),
+      description: 'Bespoke atelier addition arranged by traveler.',
+      category: 'Culture',
+      location: trip.destination,
+      estimatedCost: '₹800 – ₹1,500',
+      isIndoor: true,
+    };
+
+    const updatedDays = days.map((d, idx) => {
+      if (idx === currentDayIndex) {
+        return {
+          ...d,
+          activities: [...d.activities, newActivity]
+        };
+      }
+      return d;
+    });
+
+    if (onUpdateItinerary) {
+      onUpdateItinerary(trip, updatedDays);
+    }
+    setBespokeStopText('');
+  };
+
+  // Accurate Budget calculations
   const calculateBudgetBreakdown = () => {
     let activityTotal = 0;
+    let diningTotal = 0;
+    let cultureTotal = 0;
+    let transitActTotal = 0;
+
     days.forEach(day => {
       day.activities.forEach(act => {
+        const costStr = (act.estimatedCost || '').toLowerCase().trim();
+        // Skip items that don't have a cost or are free/complimentary/included
+        const isFree = 
+          costStr.includes('free') || 
+          costStr.includes('complimentary') || 
+          costStr.includes('included') || 
+          costStr.includes('no charge') ||
+          costStr === '-' || 
+          costStr === 'n/a' ||
+          !costStr;
+
+        if (isFree) return;
+
         const numbers = act.estimatedCost.match(/\d[\d,]*/g);
         if (numbers && numbers.length > 0) {
           const parsedNums = numbers.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n));
+          let cost = 0;
           if (parsedNums.length === 1) {
-            activityTotal += parsedNums[0];
+            cost = parsedNums[0];
           } else if (parsedNums.length >= 2) {
-            const avg = Math.round((parsedNums[0] + parsedNums[1]) / 2);
-            activityTotal += avg;
+            cost = Math.round((parsedNums[0] + parsedNums[1]) / 2);
           }
+
+          activityTotal += cost;
+          if (act.category === 'Dining') diningTotal += cost;
+          else if (act.category === 'Transit') transitActTotal += cost;
+          else cultureTotal += cost;
         }
       });
     });
 
-    const daysCount = Math.max(1, days.length);
-    const estimatedDailySpend = Math.round(activityTotal / daysCount);
-    const nightsCount = days.length > 1 ? days.length - 1 : 1;
-
-    let hotelRatePerNight = 0;
-    if (displayHotels && displayHotels.length > 0) {
-      let sumRates = 0;
-      let count = 0;
-      displayHotels.forEach(h => {
-        const numbers = h.pricePerNight.match(/\d[\d,]*/g);
-        if (numbers && numbers.length > 0) {
-          const val = parseInt(numbers[0].replace(/,/g, ''), 10);
-          if (!isNaN(val) && val > 0) {
-            sumRates += val;
-            count++;
-          }
-        }
-      });
-      if (count > 0) {
-        hotelRatePerNight = Math.round(sumRates / count);
+    // Flight total: calculate only if flights are present in dossier
+    let flightTotal = 0;
+    if (displayFlights && displayFlights.length > 0) {
+      const flightNums = (displayFlights[0].price || '').match(/\d[\d,]*/g);
+      if (flightNums && flightNums.length > 0) {
+        flightTotal = parseInt(flightNums[0].replace(/,/g, ''), 10) || 0;
       }
     }
 
-    if (hotelRatePerNight === 0) {
-      if (trip.budget === 'low') hotelRatePerNight = 1500;
-      else if (trip.budget === 'high') hotelRatePerNight = 9500;
-      else hotelRatePerNight = 3800;
+    // Hotel total: calculate only if hotels are present in dossier
+    let hotelTotal = 0;
+    const nightsCount = Math.max(1, days.length > 1 ? days.length - 1 : 1);
+    if (displayHotels && displayHotels.length > 0) {
+      const hotelNums = (displayHotels[0].pricePerNight || '').match(/\d[\d,]*/g);
+      if (hotelNums && hotelNums.length > 0) {
+        const nightlyRate = parseInt(hotelNums[0].replace(/,/g, ''), 10) || 0;
+        hotelTotal = nightlyRate * nightsCount;
+      }
     }
 
-    const accommodationTotal = hotelRatePerNight * nightsCount;
-    const grandTotal = activityTotal + accommodationTotal;
+    const totalEst = activityTotal + flightTotal + hotelTotal;
+    const daysCount = Math.max(1, days.length);
+    const dailyEst = daysCount > 0 ? Math.round(totalEst / daysCount) : 0;
 
-    return {
-      activityTotal,
-      estimatedDailySpend,
-      daysCount,
-      nightsCount,
-      hotelRatePerNight,
-      accommodationTotal,
-      grandTotal
+    // Allocation percentages (real dynamic math)
+    const totalRef = totalEst > 0 ? totalEst : 1;
+    const stayPercent = totalEst > 0 ? Math.round((hotelTotal / totalRef) * 100) : 0;
+    const transitPercent = totalEst > 0 ? Math.round(((flightTotal + transitActTotal) / totalRef) * 100) : 0;
+    const diningPercent = totalEst > 0 ? Math.round((diningTotal / totalRef) * 100) : 0;
+    const culturePercent = totalEst > 0 ? Math.max(0, 100 - stayPercent - transitPercent - diningPercent) : 0;
+
+    return { 
+      activityTotal, 
+      flightTotal, 
+      hotelTotal, 
+      totalEst, 
+      dailyEst,
+      stayPercent,
+      transitPercent,
+      diningPercent,
+      culturePercent
     };
   };
 
   const budgetMetrics = calculateBudgetBreakdown();
+  const tripBg = trip.bgImage || getDestinationBackgroundImage(trip.destination);
 
-  // Neutral Translucent Glass Badges
-  const getCategoryBadgeClass = (category: Activity['category']) => {
-    switch (category) {
-      case 'Dining':
-        return tripTheme.tagColor;
-      case 'Culture':
-        return 'bg-white/10 text-slate-200 border-white/20';
-      case 'Transit':
-        return 'bg-white/5 text-slate-300 border-white/10';
-      case 'Outdoor':
-        return 'bg-white/10 text-slate-200 border-white/20';
-      default:
-        return tripTheme.tagColor;
-    }
+  // Weather icon helper
+  const getWeatherIcon = (cond?: string) => {
+    const c = (cond || '').toLowerCase();
+    if (c.includes('rain')) return <CloudRain className="w-4 h-4 text-sky-500" />;
+    if (c.includes('cloud')) return <CloudSun className="w-4 h-4 text-[#9A5B43]" />;
+    if (c.includes('wind')) return <Wind className="w-4 h-4 text-slate-500" />;
+    return <Sun className="w-4 h-4 text-sky-400" />;
   };
 
   return (
-    <div className="relative min-h-screen w-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden flex flex-col justify-between selection:bg-rose-500/20">
+    <div className="relative min-h-screen w-screen bg-[#FAF9F6] text-[#151516] font-sans antialiased selection:bg-[#EBE7DC] selection:text-[#151516] overflow-x-hidden">
       
-      {/* 1. Full-Screen Landscape Background with Light Wash */}
-      <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-700">
-        <img
-          src={trip.bgImage || getDestinationBackgroundImage(trip.destination)}
-          alt={trip.destination}
-          className="w-full h-full object-cover object-center filter brightness-[0.98] contrast-[1.05] opacity-80"
-          onError={(e) => {
-            e.currentTarget.src = getDestinationBackgroundImage(trip.destination);
-          }}
+      {/* ================= 1. AMBIENT BACKDROP ================= */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-scale-subtle opacity-95"
+          style={{ backgroundImage: `url('${tripBg}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/30 to-white/40 transition-all duration-700" />
+        {/* Cinematic Scrim: Gentle darkening at top for header contrast, lighter translucent linen below to maximize background visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#151516]/50 via-[#FAF9F6]/25 to-[#FAF9F6]/80" />
       </div>
 
-      {/* 2. Top Header Ribbon */}
-      <header className="relative z-20 px-8 py-6 flex items-center justify-between">
-        
-        {/* Back Button */}
-        <button
-          onClick={onBack}
-          className="px-5 py-2.5 rounded-full bg-white/90 hover:bg-white backdrop-blur-xl text-slate-800 text-xs font-semibold transition-all duration-300 flex items-center space-x-2 shadow-sm border border-slate-200/90 active:scale-95 hover:scale-105 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 text-rose-500" />
-          <span>Back to Journeys</span>
-        </button>
-
-        {/* Minimalist Center Title in Frosted Glass Pill */}
-        <div className="text-center px-6 py-2 rounded-2xl bg-white/85 backdrop-blur-xl border border-slate-200/80 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-widest block text-rose-600">
-            {trip.country && trip.country.toLowerCase() !== trip.destination.toLowerCase() ? capitalizeWords(trip.country) : 'India'} • Full Trip Plan
-          </span>
-          <h1 className="font-bold text-2xl uppercase tracking-tight text-slate-900 drop-shadow-sm">
-            {capitalizeWords(trip.destination)}
-          </h1>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center space-x-3">
-          <div className="bg-white/80 backdrop-blur-xl rounded-full p-1 border border-slate-200/90 shadow-sm flex space-x-1 text-xs font-semibold">
-            <button
-              onClick={() => setActiveTab('itinerary')}
-              className={`px-4 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                activeTab === 'itinerary' ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Timeline
-            </button>
-            <button
-              onClick={() => setActiveTab('inventory')}
-              className={`px-4 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                activeTab === 'inventory' ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Flights & Stays
-            </button>
-          </div>
-
-          <button
-            onClick={onOpenExport}
-            className="p-2.5 rounded-full bg-white/90 hover:bg-white backdrop-blur-xl text-slate-700 transition-all duration-300 border border-slate-200/90 shadow-sm active:scale-95 hover:scale-105 cursor-pointer"
-            title="Export iCal / PDF"
+      {/* ================= 2. STICKY QUICK-SWITCH FLOATING BAR ================= */}
+      <div className="sticky top-3 sm:top-4 z-40 max-w-7xl mx-auto px-3 sm:px-8 mb-3 sm:mb-4 pointer-events-none">
+        <div className="paper-panel rounded-full px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-lg flex items-center justify-between gap-2 sm:gap-3 pointer-events-auto border border-[#E8E4DA] w-full">
+          
+          {/* Back to All Journeys */}
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-medium text-[#151516] hover:bg-[#F4F1EA] transition group cursor-pointer shrink-0"
           >
-            <Download className="w-4 h-4 text-rose-500" />
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#71717A] group-hover:-translate-x-0.5 transition" />
+            <span><span className="hidden sm:inline">All </span>Journeys</span>
           </button>
 
-          <button
-            onClick={() => {
-              if (window.confirm(`Are you sure you want to delete the itinerary for ${trip.destination}?`)) {
-                onDeleteTrip(trip.id);
-              }
-            }}
-            className="p-2.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all duration-300 border border-rose-200 active:scale-95 hover:scale-105 cursor-pointer"
-            title="Delete Itinerary"
-          >
-            <Trash2 className="w-4 h-4 text-rose-500" />
-          </button>
-        </div>
+          <span className="w-[1px] h-4 bg-[#E8E4DA] hidden md:block" />
 
-      </header>
-
-      {/* 3. Main Glass Workspace Container */}
-      <main className="relative z-10 px-6 sm:px-10 py-6 flex-1 flex flex-col max-w-7xl mx-auto w-full space-y-6 animate-slide-up">
-        
-        {activeTab === 'itinerary' && (
-          <div className="space-y-6">
-            
-            {/* Days Ribbon Container - Isolated Glass Bar */}
-            <div className="p-3 rounded-3xl bg-white/80 border border-slate-200/90 backdrop-blur-xl shadow-sm">
-              <div className="flex items-center space-x-3 overflow-x-auto pb-1 pt-1 px-1 no-scrollbar">
-                {days.map((day, idx) => {
-                  const isSelected = currentDayIndex === idx;
-                  const isRecentlyUpdated = lastUpdatedDayNumber === day.dayNumber;
+          {/* Quick Switcher Between Other Trips */}
+          {trips.length > 1 && (
+            <div className="hidden md:flex items-center gap-1.5">
+              <span className="text-[10px] font-mono tracking-editorial-mono uppercase text-[#A1A1AA] mr-1">Switch:</span>
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-md">
+                {trips.slice(0, 5).map(t => {
+                  const isCurrent = t.id === trip.id;
                   return (
                     <button
-                      key={day.dayNumber}
-                      onClick={() => setDayIndex(idx)}
-                      className={`px-5 py-3 rounded-2xl min-w-[145px] flex flex-col justify-between border transition-all duration-300 text-left relative overflow-hidden cursor-pointer ${
-                        isSelected
-                          ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/25 scale-[1.02]'
-                          : 'bg-white border-slate-200/80 text-slate-700 hover:border-slate-300 shadow-sm opacity-90'
+                      key={t.id}
+                      onClick={() => onSelectTrip && onSelectTrip(t)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-sans transition cursor-pointer ${
+                        isCurrent 
+                          ? 'bg-[#151516] text-white font-medium' 
+                          : 'text-[#525258] hover:text-[#151516] hover:bg-[#E8E5DD]'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-1.5">
-                          <span className={`font-bold text-xs ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                            Day {day.dayNumber}
-                          </span>
-                          {isRecentlyUpdated && (
-                            <span className="text-[8px] bg-emerald-50 text-emerald-700 border border-emerald-300 px-1.5 py-0.2 rounded-full font-bold uppercase animate-pulse">
-                              Updated
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm">{day.weather.icon}</span>
-                      </div>
-                      <div className={`text-[10px] font-medium ${isSelected ? 'text-white/90' : 'text-slate-500'}`}>
-                        {day.date}
-                      </div>
+                      {capitalizeWords(t.destination)}
                     </button>
                   );
                 })}
               </div>
             </div>
+          )}
 
-            {/* Split Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Right Action Icons: Status, Concierge AI, Export & Delete */}
+          <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 shrink-0">
+            <span className="text-[9px] sm:text-[10px] font-mono tracking-editorial-mono px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#E8E5DD] text-[#38383C] font-semibold uppercase">
+              <span className="hidden sm:inline">{trip.status === 'past' ? 'ARCHIVED' : 'ACTIVE RESIDENCY'}</span>
+              <span className="sm:hidden">{trip.status === 'past' ? 'PAST' : 'ACTIVE'}</span>
+            </span>
+
+            <button
+              onClick={onOpenConciergeChat}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#151516] hover:bg-[#232326] text-white text-[11px] font-medium transition cursor-pointer shadow-sm border border-white/10"
+              title="Open Concierge AI"
+            >
+              <Sparkles className="w-3 h-3 text-sky-400" />
+              <span className="hidden sm:inline">Concierge AI</span>
+              <span className="sm:hidden">AI</span>
+            </button>
+
+            <button
+              onClick={onOpenExport}
+              className="p-1 sm:p-1.5 rounded-full hover:bg-[#E8E5DD] text-[#71717A] hover:text-[#151516] transition cursor-pointer"
+              title="Export Dossier PDF / Calendar"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete the dossier for ${trip.destination}?`)) {
+                  onDeleteTrip(trip.id);
+                }
+              }}
+              className="p-1 sm:p-1.5 rounded-full hover:bg-rose-50 text-[#71717A] hover:text-rose-600 transition cursor-pointer"
+              title="Delete Dossier"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ================= 3. IMMERSIVE SELECTED CITY HERO SECTION ================= */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-6 sm:pb-8">
+        <div className="space-y-3 sm:space-y-4">
+          
+          {/* Metadata Badges */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <span className="text-[10px] sm:text-[11px] font-mono tracking-editorial-mono uppercase text-white/90 bg-[#151516]/45 backdrop-blur-md px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full border border-white/15">
+              Dossier #{trip.id.slice(0, 8).toUpperCase()}
+            </span>
+            <span className="text-[11px] sm:text-xs font-mono text-white/90 bg-[#151516]/45 backdrop-blur-md px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full border border-white/15">
+              {trip.start_date || 'Upcoming'} {trip.end_date ? `— ${trip.end_date}` : ''}
+            </span>
+            <span className="text-xs font-serif italic text-white/80 hidden md:inline">
+              — {trip.budget.toUpperCase()} Tier private residency
+            </span>
+          </div>
+
+          {/* City Heading & Ambient Destination Clock */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
+            <div>
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-7xl font-normal text-white tracking-tight leading-none drop-shadow-sm">
+                {formatLocationName(trip.destination, trip.country)}
+              </h1>
+              <p className="mt-2 sm:mt-3 font-sans text-xs sm:text-sm text-white/90 font-light max-w-2xl leading-relaxed drop-shadow-sm">
+                {getCleanSummary(trip.description, trip.destination)}
+              </p>
+            </div>
+
+            {/* Local Clock & Weather Microclimate Card */}
+            <div className="paper-panel p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#E8E4DA] flex items-center justify-between sm:justify-start gap-4 sm:gap-6 text-[#151516] shrink-0 shadow-sm w-full sm:w-auto">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">
+                  Local Time
+                </span>
+                <span className="font-mono text-xs sm:text-sm font-semibold text-[#151516] block mt-0.5">
+                  {timeInfo.timeStr} {timeInfo.tzAbbreviation}
+                </span>
+                <span className="text-[10px] text-[#71717A]">{timeInfo.ianaTimezone}</span>
+              </div>
+
+              <span className="w-[1px] h-8 bg-[#E8E4DA]" />
+
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#71717A] block">
+                  Microclimate
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {getWeatherIcon(activeDay?.weather?.condition)}
+                  <span className="text-xs sm:text-sm font-medium text-[#151516]">
+                    {activeDay?.weather?.temp || '24°C'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#71717A]">
+                  {activeDay?.weather?.condition || 'Crisp Autumn'}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* ================= 4. DOSSIER MAIN TABS & CONTENT BODY ================= */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pb-20 sm:pb-24">
+        
+        {/* Dossier Navigation Tab Buttons */}
+        <div className="flex items-center gap-1.5 sm:gap-2 border-b border-[#E8E4DA] pb-2.5 sm:pb-3 overflow-x-auto no-scrollbar mb-6 sm:mb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <button 
+            onClick={() => handleTabSwitch('itinerary')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+              currentTab === 'itinerary'
+                ? 'bg-[#151516] text-white shadow-sm'
+                : 'paper-panel text-[#525258] hover:text-[#151516]'
+            }`}
+          >
+            <span className="sm:hidden">Itinerary</span>
+            <span className="hidden sm:inline">Itinerary & Timeline</span>
+          </button>
+
+          <button 
+            onClick={() => handleTabSwitch('inventory')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-medium transition cursor-pointer flex items-center space-x-1.5 shrink-0 whitespace-nowrap ${
+              currentTab === 'inventory'
+                ? 'bg-[#151516] text-white shadow-sm'
+                : 'paper-panel text-[#525258] hover:text-[#151516]'
+            }`}
+          >
+            <Plane className="w-3.5 h-3.5" />
+            <span>Flights & Stays</span>
+          </button>
+
+          <button 
+            onClick={() => handleTabSwitch('packing')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+              currentTab === 'packing'
+                ? 'bg-[#151516] text-white shadow-sm'
+                : 'paper-panel text-[#525258] hover:text-[#151516]'
+            }`}
+          >
+            <span className="sm:hidden">Packing</span>
+            <span className="hidden sm:inline">Curated Packing & Notes</span>
+          </button>
+        </div>
+
+        {/* ----------------- TAB PANEL 1: ITINERARY & TIMELINE ----------------- */}
+        {currentTab === 'itinerary' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+            
+            {/* Timeline Main (8 cols) */}
+            <div className="lg:col-span-8 paper-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 border border-[#E8E4DA]">
               
-              {/* Timeline Activities Panel (Cols 1-8) */}
-              <div className="lg:col-span-8 space-y-4">
-                
-                {/* Weather Alignment Banner */}
-                <div className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 font-mono font-bold text-xs shadow-sm">
-                      D{activeDay?.dayNumber || 1}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">
-                        Day {activeDay?.dayNumber} Agenda — {activeDay?.date}
-                      </h3>
-                      <span className="text-[11px] text-slate-500">
-                        {activeDay?.activities.length || 0} Scheduled Activities
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold flex items-center space-x-2 text-slate-700">
-                    {activeDay?.weather.isRainy ? <CloudRain className="w-4 h-4 text-rose-500" /> : <Sun className="w-4 h-4 text-amber-500" />}
-                    <span>{activeDay?.weather.isRainy ? '☔ Weather-Safe Indoor Plan' : '☀️ Clear Outdoor Plan'}</span>
-                  </div>
+              {/* Day selector pills */}
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-[#E8E4DA]">
+                <div>
+                  <span className="text-[10px] font-mono tracking-editorial-mono uppercase text-[#71717A] font-semibold">
+                    Chronological Dossier
+                  </span>
+                  <h3 className="font-serif text-xl sm:text-2xl font-normal text-[#151516] mt-0.5 sm:mt-1">
+                    Day 0{activeDay ? activeDay.dayNumber : 1}: {trip.destination} Exploration
+                  </h3>
                 </div>
 
-                {/* Activities List */}
-                <div className="space-y-3">
-                  {activeDay?.activities.map((act) => (
-                    <div
-                      key={act.id}
-                      className="p-5 rounded-3xl bg-white border border-slate-200/90 hover:border-rose-300 hover:shadow-lg transition-all duration-300 shadow-sm group"
+                <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
+                  {days.map((d, idx) => (
+                    <button
+                      key={d.dayNumber}
+                      onClick={() => setDayIndex(idx)}
+                      className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-mono transition cursor-pointer shrink-0 ${
+                        currentDayIndex === idx
+                          ? 'bg-[#151516] text-white font-medium shadow-sm'
+                          : 'paper-inset text-[#525258] hover:text-[#151516]'
+                      }`}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 shrink-0 font-bold text-xs shadow-sm">
-                            <MapPin className="w-5 h-5 text-rose-500" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <div className="flex items-center space-x-2">
-                              <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-semibold ${getCategoryBadgeClass(act.category)}`}>
+                      Day 0{d.dayNumber}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Timeline Checkpoints */}
+              <div className="space-y-4 pt-2 relative">
+                <div className="absolute left-3.5 top-3 bottom-6 w-[1px] bg-[#E8E4DA]" />
+                
+                {activeDay && activeDay.activities.length > 0 ? (
+                  activeDay.activities.map((act) => {
+                    const isDone = !!completedStops[act.id];
+                    return (
+                      <div key={act.id} className="relative pl-9 group">
+                        
+                        {/* Node Check Button */}
+                        <button
+                          onClick={() => toggleStopStatus(act.id)}
+                          title="Toggle Checkpoint Completion"
+                          className={`absolute left-1.5 top-3 -translate-y-1/2 w-4 h-4 rounded-full border bg-white transition-all flex items-center justify-center cursor-pointer ${
+                            isDone 
+                              ? 'border-[#151516] bg-[#151516] text-white' 
+                              : 'border-[#A1A1AA] hover:border-[#151516] text-transparent'
+                          }`}
+                        >
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </button>
+
+                        {/* Stop Card */}
+                        <div 
+                          onClick={() => setSelectedActivity(act)}
+                          className="paper-inset p-4 rounded-2xl border border-[#E8E4DA] hover:border-[#A1A1AA] transition cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs text-[#525258]">
+                              {act.time}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-mono tracking-editorial-mono uppercase px-2 py-0.5 rounded bg-[#E8E5DD] text-[#38383C]">
                                 {act.category}
                               </span>
-                              {act.isIndoor && (
-                                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                                  🛡️ Weather Safe Indoor Spot
+                              {act.estimatedCost && (
+                                <span className="text-[10px] text-[#9A5B43] font-serif italic">
+                                  {act.estimatedCost}
                                 </span>
                               )}
                             </div>
-
-                            <h4 className="font-bold text-lg text-slate-900 group-hover:text-rose-600 transition-colors duration-300 leading-snug">
-                              {act.title}
-                            </h4>
-
-                            <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
-                              {act.description}
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 font-medium pt-2">
-                              <span className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200">
-                                <MapPin className="w-3.5 h-3.5 text-rose-500" />
-                                <span className="text-slate-800 font-medium">{act.location}</span>
-                              </span>
-
-                              <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-xs">
-                                {act.estimatedCost.includes('₹') || act.estimatedCost.includes('$') ? (
-                                  <>
-                                    <DollarSign className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                                    <span>{act.estimatedCost}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                                    <span>{act.estimatedCost}</span>
-                                  </>
-                                )}
-                              </span>
-                            </div>
                           </div>
+
+                          <h5 className={`font-serif text-lg text-[#151516] mt-1 ${isDone ? 'line-through opacity-50' : ''}`}>
+                            {act.title}
+                          </h5>
+                          <p className={`text-xs text-[#525258] font-light mt-0.5 ${isDone ? 'opacity-50' : ''}`}>
+                            {act.description}
+                          </p>
                         </div>
 
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.title + ' ' + act.location)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors duration-300 shrink-0 border border-slate-200"
-                          title="Explore Place on Google Maps"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
+                    );
+                  })
+                ) : (
+                  <div className="py-8 text-center text-xs text-[#71717A] font-serif italic">
+                    No stops scheduled for this day yet. Add a bespoke stop below.
+                  </div>
+                )}
               </div>
 
-              {/* Right Panel: Budget Gauge & Trip Overview (Cols 9-12) */}
-              <div className="lg:col-span-4 space-y-4">
-                
-                {/* Budget Calculator Card */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                    <span className="font-bold text-xs uppercase tracking-wider text-slate-700">Estimated Budget Tracker</span>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 font-semibold uppercase border border-rose-200">
-                      {trip.budget} Tier
-                    </span>
+              {/* Add Bespoke Activity to Day */}
+              <form onSubmit={handleAddBespokeStop} className="pt-4 border-t border-[#E8E4DA] flex items-center gap-3">
+                <input
+                  type="text"
+                  value={bespokeStopText}
+                  onChange={(e) => setBespokeStopText(e.target.value)}
+                  placeholder="Add bespoke atelier stop or reservation..."
+                  className="flex-1 bg-[#F4F1EA]/80 border border-[#E8E4DA] rounded-xl px-4 py-2.5 text-xs text-[#151516] placeholder-[#A1A1AA] focus:outline-none focus:border-[#38383C]"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 rounded-xl bg-[#151516] hover:bg-[#232326] text-white text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Stop</span>
+                </button>
+              </form>
+
+            </div>
+
+            {/* Companion Sidebar (4 cols) */}
+            <div className="lg:col-span-4 space-y-6">
+              
+              {/* Curator Note with Laugh Tale Philosophy */}
+              <div className="paper-panel rounded-3xl p-6 space-y-3 border border-[#E8E4DA]">
+                <div className="flex items-center gap-2 text-[#525258] text-xs font-medium">
+                  <Feather className="w-3.5 h-3.5 text-[#9A5B43]" />
+                  <span>Note from Master Curator</span>
+                </div>
+                <p className="font-serif italic text-[#232326] text-sm leading-relaxed">
+                  &ldquo;In every grand adventure, there&rsquo;s one final destination &mdash; a place where every journey finds its meaning. Laugh Tale is that destination.&rdquo;
+                </p>
+              </div>
+
+              {/* Estimated Budget Tracker Card */}
+              <div className="paper-panel rounded-3xl p-6 space-y-4 border border-[#E8E4DA]">
+                <div className="flex items-baseline justify-between pb-2 border-b border-[#E8E4DA]">
+                  <span className="text-[10px] font-mono tracking-editorial-mono uppercase text-[#71717A] font-semibold">
+                    Estimated Budget Tracker
+                  </span>
+                  <span className="text-xs font-mono text-[#525258]">
+                    {budgetMetrics.totalEst > 0 ? `${days.length} Days Planned` : 'No Expenses Logged'}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-[#A1A1AA]">Est. Daily Budget</span>
+                    <p className="font-serif text-2xl font-normal text-[#151516]">
+                      ₹{budgetMetrics.dailyEst.toLocaleString()}
+                    </p>
                   </div>
-
-                  <div className="space-y-3">
-                    {/* Est. Daily Budget */}
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-medium">Est. Daily Budget (Food & Activities)</span>
-                      <span className="text-rose-600 font-mono font-bold text-sm">
-                        ₹{budgetMetrics.estimatedDailySpend.toLocaleString('en-IN')}/day
-                      </span>
-                    </div>
-
-                    {/* Breakdown Subtotals */}
-                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Activities & Dining ({budgetMetrics.daysCount} Days)</span>
-                        <span className="text-slate-900 font-mono font-semibold">
-                          ₹{budgetMetrics.activityTotal.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Accommodation ({budgetMetrics.nightsCount} Nights @ ₹{budgetMetrics.hotelRatePerNight.toLocaleString('en-IN')})</span>
-                        <span className="text-slate-900 font-mono font-semibold">
-                          ₹{budgetMetrics.accommodationTotal.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Total Budget */}
-                    <div className="flex justify-between items-center text-xs pt-1">
-                      <span className="text-slate-700 font-bold uppercase tracking-wider">Total Estimated Budget</span>
-                      <span className="font-mono font-extrabold text-base text-rose-600">
-                        ₹{budgetMetrics.grandTotal.toLocaleString('en-IN')} INR
-                      </span>
-                    </div>
-
-                    {/* Budget progress bar */}
-                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-rose-400 to-rose-600 transition-all duration-500"
-                        style={{ width: `${Math.min(100, (budgetMetrics.grandTotal / (trip.budget === 'high' ? 75000 : trip.budget === 'medium' ? 35000 : 15000)) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                    <div className="flex items-center space-x-1.5 font-semibold text-slate-800">
-                      <ShieldCheck className="w-4 h-4 text-rose-500" />
-                      <span>Budget Breakdown Guide</span>
-                    </div>
-                    <p className="text-slate-500 text-[11px] leading-relaxed">
-                      Food, dining & activity entry costs are included in the daily estimated budget. Accommodation is calculated per night based on selected hotels.
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-mono text-[#A1A1AA]">Total Est. Budget</span>
+                    <p className="font-serif text-2xl font-normal text-[#71717A]">
+                      ₹{budgetMetrics.totalEst.toLocaleString()}
                     </p>
                   </div>
                 </div>
 
-                {/* Trip Summary Card */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3 text-xs">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
-                    Journey Details
-                  </h4>
-                  <div className="space-y-2 text-slate-700">
-                    <div className="flex justify-between py-1 border-b border-slate-200">
-                      <span className="text-slate-500">Origin</span>
-                      <span className="font-bold text-slate-900">{trip.origin}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-200">
-                      <span className="text-slate-500">Destination</span>
-                      <span className="font-bold text-slate-900">{trip.destination}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-200">
-                      <span className="text-slate-500">Travelers</span>
-                      <span className="font-bold text-slate-900">{trip.guest_count} Person(s)</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-500">Session ID</span>
-                      <span className="font-mono text-[10px] text-rose-600">{trip.session_id}</span>
-                    </div>
-                  </div>
+                {/* Allocation Progress Bar */}
+                <div className="w-full h-1.5 rounded-full bg-[#E8E5DD] overflow-hidden flex">
+                  {budgetMetrics.totalEst > 0 ? (
+                    <>
+                      {budgetMetrics.stayPercent > 0 && (
+                        <div className="bg-[#151516] h-full" style={{ width: `${budgetMetrics.stayPercent}%` }} title={`Sanctuary Stays: ${budgetMetrics.stayPercent}%`} />
+                      )}
+                      {budgetMetrics.diningPercent > 0 && (
+                        <div className="bg-[#9A5B43] h-full" style={{ width: `${budgetMetrics.diningPercent}%` }} title={`Dining: ${budgetMetrics.diningPercent}%`} />
+                      )}
+                      {budgetMetrics.transitPercent > 0 && (
+                        <div className="bg-[#3D4536] h-full" style={{ width: `${budgetMetrics.transitPercent}%` }} title={`Transit & Flights: ${budgetMetrics.transitPercent}%`} />
+                      )}
+                      {budgetMetrics.culturePercent > 0 && (
+                        <div className="bg-[#71717A] h-full" style={{ width: `${budgetMetrics.culturePercent}%` }} title={`Culture & Ateliers: ${budgetMetrics.culturePercent}%`} />
+                      )}
+                    </>
+                  ) : (
+                    <div className="bg-[#E8E5DD] h-full w-full" />
+                  )}
                 </div>
 
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-[#525258]">
+                  <div>• Sanctuary Stay ({budgetMetrics.stayPercent}%)</div>
+                  <div>• Dining ({budgetMetrics.diningPercent}%)</div>
+                  <div>• Transit & Flights ({budgetMetrics.transitPercent}%)</div>
+                  <div>• Ateliers & Culture ({budgetMetrics.culturePercent}%)</div>
+                </div>
               </div>
 
             </div>
@@ -464,203 +619,252 @@ export const TripPlanView: React.FC<TripPlanViewProps> = ({
           </div>
         )}
 
-        {activeTab === 'inventory' && (
-          <div className="space-y-8 animate-fade-in">
-            
-            {/* 1. FLIGHT RECOMMENDATIONS SECTION */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div className="flex items-center space-x-2">
-                  <Plane className="w-5 h-5 text-rose-500" />
-                  <h2 className="font-bold text-lg text-slate-900">
-                    Flight Recommendations ({trip.origin} ➔ {trip.destination})
-                  </h2>
-                </div>
-                <span className="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                  SerpApi Google Flights
-                </span>
-              </div>
-
-              {displayFlights.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {displayFlights.map((flight) => (
-                    <div 
-                      key={flight.id} 
-                      className="p-5 rounded-3xl bg-white border border-slate-200/90 hover:border-rose-300 hover:shadow-lg transition-all duration-300 space-y-4 shadow-sm group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-slate-900 group-hover:text-rose-600 transition-colors duration-300">
-                          {flight.airline}
-                        </span>
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 font-bold border border-rose-200">
-                          {flight.stops}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center text-xs py-3 border-y border-slate-200">
-                        <div>
-                          <span className="font-bold block text-sm text-slate-900">{flight.departureTime}</span>
-                          <span className="text-slate-500 text-[10px] block truncate max-w-[100px]">
-                            {flight.departureAirport || trip.origin}
-                          </span>
-                        </div>
-
-                        <div className="text-center px-2">
-                          <span className="text-[10px] text-slate-400 block">{flight.duration}</span>
-                          <Plane className="w-4 h-4 text-rose-500 mx-auto my-1 transform rotate-90" />
-                        </div>
-
-                        <div className="text-right">
-                          <span className="font-bold block text-sm text-slate-900">{flight.arrivalTime}</span>
-                          <span className="text-slate-500 text-[10px] block truncate max-w-[100px]">
-                            {flight.arrivalAirport || trip.destination}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center pt-1">
-                        <span className="font-mono font-bold text-base text-rose-600">{flight.price}</span>
-                        <a
-                          href={`https://www.google.com/travel/flights?q=flights+from+${encodeURIComponent(trip.origin)}+to+${encodeURIComponent(trip.destination)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1 shadow-md shadow-rose-500/20"
-                        >
-                          <span>Book Flight</span>
-                          <ExternalLink className="w-3 h-3 text-white" />
-                        </a>
-                      </div>
+        {/* ----------------- TAB PANEL 2: FLIGHTS & STAYS ----------------- */}
+        {currentTab === 'inventory' && (
+          <div className="space-y-6 sm:space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+              
+              {/* Transit & Boarding Pass Document */}
+              <div className="paper-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 border border-[#E8E4DA]">
+                <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#E8E4DA]">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#F4F1EA] flex items-center justify-center text-[#151516]">
+                      <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#A1A1AA] block">
+                        Transit Document
+                      </span>
+                      <h4 className="font-serif text-base sm:text-lg font-normal text-[#151516]">
+                        Flight Recommendations
+                      </h4>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 rounded-3xl bg-white/95 border border-slate-200/90 text-center space-y-3 shadow-sm backdrop-blur-md max-w-xl mx-auto">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 mx-auto">
-                    <Plane className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">No Flights Requested Yet</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Direct flight routes and live pricing are retrieved on-demand via your Concierge AI.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onOpenConciergeChat}
-                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all shadow-md shadow-rose-500/20 active:scale-95 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-white" />
-                    <span>Ask Concierge for Flights ({trip.origin} ➔ {trip.destination})</span>
-                  </button>
+                  <span className="text-[9px] sm:text-[10px] font-mono tracking-editorial-mono px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-[#E8E5DD] text-[#38383C] font-semibold">
+                    TKT CONFIRMED
+                  </span>
                 </div>
-              )}
-            </div>
 
-            {/* 2. HOTEL RECOMMENDATIONS SECTION */}
-            <div className="space-y-4 pt-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div className="flex items-center space-x-2">
-                  <Building2 className="w-5 h-5 text-rose-500" />
-                  <h2 className="font-bold text-lg text-slate-900">
-                    Hotel & Stay Recommendations ({trip.destination})
-                  </h2>
-                </div>
-                <span className="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                  SerpApi Google Hotels
-                </span>
+                {displayFlights.length > 0 ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    {displayFlights.slice(0, 2).map((flight, idx) => (
+                      <div key={flight.id || idx} className="paper-inset rounded-xl sm:rounded-2xl p-3.5 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border border-[#E8E4DA]">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Origin</span>
+                          <span className="font-semibold text-xs sm:text-sm text-[#151516] block mt-0.5">{trip.origin || 'London'}</span>
+                          <span className="text-xs font-mono text-[#525258]">{flight.departureTime || '09:18 AM'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Destination</span>
+                          <span className="font-semibold text-xs sm:text-sm text-[#151516] block mt-0.5">{trip.destination}</span>
+                          <span className="text-xs font-mono text-[#525258]">{flight.arrivalTime || '11:32 AM'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Airline & Seat</span>
+                          <span className="font-semibold text-xs sm:text-sm text-[#151516] block mt-0.5">{flight.airline || 'First Class'}</span>
+                          <span className="text-xs text-[#71717A]">{flight.price || 'Included'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Class</span>
+                          <span className="font-semibold text-xs sm:text-sm text-[#151516] block mt-0.5">{flight.class || 'Executive'}</span>
+                          <span className="text-xs text-[#71717A]">{flight.duration || 'Direct'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="paper-inset rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center text-xs text-[#71717A]">
+                    Flight coordinates being curated for {trip.origin} ➔ {trip.destination}. Ask Concierge AI for instant live flight bookings.
+                  </div>
+                )}
               </div>
 
-              {displayHotels.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {displayHotels.map((hotel) => (
-                    <div 
-                      key={hotel.id} 
-                      className="p-5 rounded-3xl bg-white border border-slate-200/90 hover:border-rose-300 hover:shadow-lg transition-all duration-300 space-y-3 shadow-sm flex flex-col justify-between group"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-base text-slate-900 group-hover:text-rose-600 transition-colors duration-300 leading-snug">
+              {/* Sanctuary Stay Card */}
+              <div className="paper-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 border border-[#E8E4DA]">
+                <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#E8E4DA]">
+                  <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#A1A1AA]">
+                    Accommodations
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-mono tracking-editorial-mono text-[#9A5B43] font-semibold">
+                    SUITE GUARANTEED
+                  </span>
+                </div>
+
+                <h4 className="font-serif text-base sm:text-lg font-normal text-[#151516]">
+                  Hotel & Stay Recommendations
+                </h4>
+
+                {displayHotels.length > 0 ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    {displayHotels.slice(0, 2).map((hotel, idx) => (
+                      <div key={hotel.id || idx} className="flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start paper-inset p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-[#E8E4DA]">
+                        <img 
+                          src={hotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80"} 
+                          alt={hotel.name} 
+                          className="w-full sm:w-28 h-32 sm:h-28 rounded-xl sm:rounded-2xl object-cover border border-[#E8E4DA] shrink-0"
+                        />
+                        <div className="space-y-1 sm:space-y-1.5 flex-1">
+                          <h5 className="font-serif text-lg sm:text-xl font-normal text-[#151516]">
                             {hotel.name}
-                          </h3>
-                          <div className="flex items-center space-x-1 text-rose-600 font-bold text-xs bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200 shrink-0">
-                            <Star className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
-                            <span>{hotel.rating || 4.5}</span>
+                          </h5>
+                          <p className="text-xs text-[#525258]">
+                            {hotel.neighborhood || `${trip.destination} Sanctuary`}
+                          </p>
+                          <div className="text-xs font-mono text-[#71717A] pt-0.5 sm:pt-1">
+                            {hotel.pricePerNight || '₹12,000/night'} · Courtyard Garden Suite
+                          </div>
+                          <div className="pt-1.5 sm:pt-2 flex flex-wrap gap-1 sm:gap-1.5">
+                            {(hotel.amenities && hotel.amenities.length > 0 ? hotel.amenities : ['Breakfast Included', 'Private Spa']).map((amenity, i) => (
+                              <span key={i} className="text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 rounded-md bg-[#E8E5DD] text-[#38383C]">
+                                {amenity}
+                              </span>
+                            ))}
                           </div>
                         </div>
-
-                        <span className="text-[10px] text-slate-500 block font-medium">
-                          📍 {hotel.neighborhood}
-                        </span>
-
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {hotel.amenities.map((amenity, aIdx) => (
-                            <span 
-                              key={aIdx} 
-                              className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center space-x-1"
-                            >
-                              <Wifi className="w-2.5 h-2.5 text-rose-500" />
-                              <span>{amenity}</span>
-                            </span>
-                          ))}
-                        </div>
                       </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="paper-inset rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center text-xs text-[#71717A]">
+                    Sanctuary stays are being surveyed in {trip.destination}. Inquire with Concierge AI to select priority private suites.
+                  </div>
+                )}
+              </div>
 
-                      <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                        <div>
-                          <span className="font-mono font-bold text-base text-rose-600 block">{hotel.pricePerNight}</span>
-                          <span className="text-[9px] text-slate-400 block uppercase tracking-wider">Per Night</span>
-                        </div>
+            </div>
+          </div>
+        )}
 
-                        <a
-                          href={`https://www.google.com/travel/hotels?q=${encodeURIComponent('Hotels in ' + trip.destination + ' ' + hotel.name)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all duration-300 flex items-center space-x-1 shadow-md shadow-rose-500/20"
-                        >
-                          <span>View Hotel</span>
-                          <ExternalLink className="w-3 h-3 text-white" />
-                        </a>
-                      </div>
-                    </div>
+        {/* ----------------- TAB PANEL 3: CURATED PACKING & NOTES ----------------- */}
+        {currentTab === 'packing' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            {/* Sartorial Capsule */}
+            <div className="paper-panel rounded-3xl p-6 sm:p-8 space-y-4 border border-[#E8E4DA]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E4DA]">
+                <h4 className="font-serif text-xl font-normal text-[#151516]">
+                  Sartorial Capsule & Microclimate
+                </h4>
+                <span className="font-mono text-xs text-[#525258]">
+                  {activeDay?.weather?.temp || '22°C'} · {activeDay?.weather?.condition || 'Crisp'}
+                </span>
+              </div>
+              <p className="text-xs text-[#525258] font-light leading-relaxed">
+                Gentle breezes transitioning into pleasant evenings. We recommend unlined cashmere outerwear, fine gauge merino knitwear, and slip-on leather footwear for effortless cultural exploration.
+              </p>
+              <div className="pt-2 space-y-2">
+                <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#A1A1AA] block font-semibold">
+                  Recommended Essentials:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {['Merino Crewneck', 'Unstructured Linen Blazer', 'Slip-on Loafers', 'UV Protective Sunglasses', 'Silk Scarf'].map((tag, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-lg paper-inset border border-[#E8E4DA] text-[#38383C]">
+                      {tag}
+                    </span>
                   ))}
                 </div>
-              ) : (
-                <div className="p-8 rounded-3xl bg-white/95 border border-slate-200/90 text-center space-y-3 shadow-sm backdrop-blur-md max-w-xl mx-auto">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 mx-auto">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">No Hotels Requested Yet</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Live hotel properties and nightly rates for {trip.destination} can be curated on-demand by your Concierge AI.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onOpenConciergeChat}
-                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all shadow-md shadow-rose-500/20 active:scale-95 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-white" />
-                    <span>Ask Concierge for Hotels in {trip.destination}</span>
-                  </button>
+              </div>
+            </div>
+
+            {/* Cultural Etiquette & Quiet Addresses */}
+            <div className="paper-panel rounded-3xl p-6 sm:p-8 space-y-4 border border-[#E8E4DA]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E4DA]">
+                <h4 className="font-serif text-xl font-normal text-[#151516]">
+                  Curator Addresses & Etiquette
+                </h4>
+                <span className="text-[10px] font-mono uppercase tracking-editorial-mono text-[#9A5B43]">
+                  CONFIDENTIAL
+                </span>
+              </div>
+              <div className="space-y-3">
+                <div className="paper-inset p-3.5 rounded-xl border border-[#E8E4DA]">
+                  <span className="font-serif text-sm font-normal text-[#151516] block">
+                    Sanctuary Footwear Protocols
+                  </span>
+                  <span className="text-xs text-[#525258] font-light">
+                    Remove footwear when crossing wooden thresholds onto tatami or temple stones.
+                  </span>
                 </div>
-              )}
+                <div className="paper-inset p-3.5 rounded-xl border border-[#E8E4DA]">
+                  <span className="font-serif text-sm font-normal text-[#151516] block">
+                    Discreet Dining Manners
+                  </span>
+                  <span className="text-xs text-[#525258] font-light">
+                    Photography is prohibited at chef counters; silence mobile communications upon entry.
+                  </span>
+                </div>
+              </div>
             </div>
 
           </div>
         )}
 
-      </main>
+      </div>
 
-      {/* 4. Floating Concierge Icon */}
+      {/* Floating Concierge Chat Pill */}
       <button
         onClick={onOpenConciergeChat}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-white/95 hover:bg-white border border-slate-200/90 text-slate-900 shadow-[0_15px_35px_rgba(15,23,42,0.12)] hover:shadow-[0_20px_45px_rgba(244,63,94,0.2)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center space-x-2 group cursor-pointer"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full bg-[#151516] hover:bg-[#232326] text-white shadow-xl flex items-center space-x-2 sm:space-x-2.5 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-white/10"
         title="Open AI Concierge Chat"
       >
-        <MessageSquare className="w-5 h-5 text-rose-500 group-hover:scale-110 transition-transform duration-300" />
-        <span className="font-bold text-xs pr-1">Concierge AI</span>
+        <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
+        <span className="font-sans font-medium text-xs pr-0.5 sm:pr-1">Concierge AI</span>
       </button>
+
+      {/* Activity Details Modal */}
+      {selectedActivity && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#151516]/60 backdrop-blur-sm"
+          onClick={() => setSelectedActivity(null)}
+        >
+          <div 
+            className="paper-panel w-full max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 sm:p-8 border border-[#E8E4DA] shadow-2xl text-[#151516] space-y-4 sm:space-y-5 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b border-[#E8E4DA] pb-4">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-editorial-mono px-2 py-0.5 rounded bg-[#E8E5DD] text-[#38383C]">
+                  {selectedActivity.category}
+                </span>
+                <h3 className="font-serif text-2xl font-normal text-[#151516] mt-1">
+                  {selectedActivity.title}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setSelectedActivity(null)}
+                className="p-1 rounded-full hover:bg-[#E8E5DD] text-[#71717A] hover:text-[#151516]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#525258] font-light leading-relaxed">
+              {selectedActivity.description}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 text-xs pt-2">
+              <div className="paper-inset p-3 rounded-xl border border-[#E8E4DA]">
+                <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Time Slot</span>
+                <span className="font-semibold text-[#151516]">{selectedActivity.time}</span>
+              </div>
+              <div className="paper-inset p-3 rounded-xl border border-[#E8E4DA]">
+                <span className="text-[10px] font-mono uppercase text-[#A1A1AA] block">Estimated Cost</span>
+                <span className="font-semibold text-[#151516]">{selectedActivity.estimatedCost}</span>
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end">
+              <button
+                onClick={() => setSelectedActivity(null)}
+                className="px-5 py-2.5 rounded-full bg-[#151516] text-white text-xs font-medium hover:bg-[#232326] transition"
+              >
+                Close Dossier Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
 };
-
-
-
